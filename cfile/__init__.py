@@ -77,9 +77,11 @@ class line:
 
 class blank:
    def __init__(self,lines=1):
-      self.lines=lines
+      self.numLines=lines
    def __str__(self):
-      return '\n'*self.lines
+      return '\n'*self.numLines   
+   def lines(self):
+      return ['' for x in range(self.numLines)]
 
 class sequence():
    def __init__(self):
@@ -99,12 +101,29 @@ class sequence():
    def append(self,elem):
       self.elements.append(elem)
    def extend(self,seq):
-      self.elements.extend(seq.elements)
-
+      if isinstance(seq, sequence):
+         self.elements.extend(seq.elements)
+      else:
+         self.elements.extend(seq)
+   
+   def lines(self):
+      lines=[]
+      for elem in self.elements:
+         if hasattr(elem, 'lines') and callable(elem.lines):
+            lines.extend(elem.lines())
+         else:
+            lines.extend(str(elem).split('\n'))
+      return lines
+   
+         
+   
+   
 class block():
-   def __init__(self,indent=0):
+   def __init__(self,indent=0, head=None, tail=None):
       self.code=sequence()
       self.indent=indent
+      self.head=head
+      self.tail=tail
    def insert(self,index,elem):
       self.code.insert(index,elem)
    def append(self,elem):
@@ -121,6 +140,15 @@ class block():
          text+='\n'.join([indentChar*self.indent+line if len(line)>0 else line for line in str(self.code).split('\n')])
          text+='}'
       return text
+   
+   def lines(self):
+      lines=[]
+      head=str(self.head)+' ' if self.head is not None else ''
+      tail=' '+str(self.tail) if self.tail is not None else ''         
+      lines.append('%s{'%(head))
+      lines.extend([indentChar*self.indent+line if len(line)>0 else line for line in self.code.lines()])      
+      lines.append('}%s'%(tail))
+      return lines
    
 
 class variable():
@@ -190,11 +218,11 @@ class function:
    """
    Creates a function
    """
-   def __init__(self,name,typename='int',const=0,pointer=0,classname=""):
+   def __init__(self,name,typename='int',const=0,pointer=0,classname="", args=None):
       self.name=name
       self.typename=typename
       self.classname=classname
-      self.arguments=[]
+      self.arguments=[] if args is None else list(args)
       if isinstance(pointer,int):
          self.pointer=pointer
       elif isinstance(pointer,bool):
@@ -228,9 +256,9 @@ class fcall(object):
    """
    Creates a function call
    """
-   def __init__(self,name):
+   def __init__(self,name, params=None):
       self.name=name
-      self.parameters=[]
+      self.parameters=[] if params is None else list(params)
    def add_param(self,arg):
       if not isinstance(arg,str):
          raise ValueError('expected string object')
@@ -292,6 +320,38 @@ class initializer:
          return '{'+', '.join([str(x) for x in self.expression]) +'}'
       else:
          return str(self.expression)
+
+class typedef:
+   def __init__(self, typeinfo, name):
+      self.typeinfo=typeinfo
+      self.name=str(name)
+   
+   def __str__(self):
+      return 'typedef %s %s'%(str(self.typeinfo),self.name)
+   
+class struct:
+   def __init__(self, name=None, block=None, typedef=None):
+      self.block=block if block is not None else block()
+      self.name=name
+      self.typedef=typedef         
+   
+   def lines(self, indent=0):
+      lines=[]
+      if self.typedef is not None:
+         self.block.tail=self.typedef
+         typedefStr='typedef '
+      else:
+         typedefStr=''
+      indentStr=indentChar*indent if indent>0 else ''
+      if self.name is None:
+         lines.append(indentStr+'%sstruct'%(typedefStr))
+      else:
+         lines.append('%s%sstruct %s'%(indentStr, typedefStr, self.name))
+      lines.extend(self.block.lines())
+      return lines
+   
+   def __str__(self):
+      return '\n'.join(self.lines())
 
 if __name__ == '__main__':
    test = cfile('test.c')
