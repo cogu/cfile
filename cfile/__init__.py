@@ -56,7 +56,7 @@ def sysinclude(filename):
 #C Language
 
 class statement:
-   def __init__(self,val,indent=0):
+   def __init__(self,val,indent=None):
       self.val=val
       self.indent=indent
    def __str__(self):
@@ -66,7 +66,7 @@ class statement:
          return indentChar*self.indent+str(self.val)+';'
 
 class line:
-   def __init__(self,val,indent=0):
+   def __init__(self,val,indent=None):
       self.val=val
       self.indent=indent
    def __str__(self):
@@ -119,9 +119,10 @@ class sequence():
    
    
 class block():
-   def __init__(self,indent=0, head=None, tail=None):
+   def __init__(self, indent=None, innerIndent=0, head=None, tail=None):
       self.code=sequence()
       self.indent=indent
+      self.innerIndent=innerIndent
       self.head=head
       self.tail=tail
    def insert(self,index,elem):
@@ -131,14 +132,25 @@ class block():
    def extend(self,sequence):
       self.code.extend(sequence)
    def __str__(self):
-      if self.indent==0:
+      if (self.indent is not None) and (self.indent > 0):
+         indentStr = indentChar*self.indent
+         text=indentStr+'{\n'
+         lines=[]
+         for item in self.code.elements:
+            if hasattr(item, 'indent') and item.indent is None:               
+               item.indent = self.innerIndent
+            lines.append(str(item))
+         text+='\n'.join(lines)+'\n'         
+         text+=indentStr+'}'
+      else:         
          text='{\n'
-         text+=str(self.code)
-         text+='}'
-      else:
-         text='{\n'
-         text+='\n'.join([indentChar*self.indent+line if len(line)>0 else line for line in str(self.code).split('\n')])
-         text+='}'
+         lines=[]
+         for item in self.code.elements:
+            if hasattr(item, 'indent') and item.indent is None:               
+               item.indent = self.innerIndent            
+            lines.append(str(item))            
+         text+='\n'.join(lines)+'\n'
+         text+='}'      
       return text
    
    def lines(self):
@@ -146,7 +158,12 @@ class block():
       head=str(self.head)+' ' if self.head is not None else ''
       tail=' '+str(self.tail) if self.tail is not None else ''         
       lines.append('%s{'%(head))
-      lines.extend([indentChar*self.indent+line if len(line)>0 else line for line in self.code.lines()])      
+      for item in self.code:
+         if hasattr(item, 'indent') and item.indent is None:               
+            item.indent = self.innerIndent
+            lines.append(str(item))
+         else:
+            lines.append(str(item))
       lines.append('}%s'%(tail))
       return lines
    
