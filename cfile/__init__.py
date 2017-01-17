@@ -158,7 +158,7 @@ class block():
       head=str(self.head)+' ' if self.head is not None else ''
       tail=' '+str(self.tail) if self.tail is not None else ''         
       lines.append('%s{'%(head))
-      for item in self.code:
+      for item in self.code.elements:
          if hasattr(item, 'indent') and item.indent is None:               
             item.indent = self.innerIndent
             lines.append(str(item))

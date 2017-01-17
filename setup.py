@@ -11,8 +11,7 @@ setup(name='cfile',
       classifiers=[
         'Development Status :: 3 - Alpha',
         'License :: OSI Approved :: MIT License',
-        'Programming Language :: Python :: 3.4',
-        'Topic :: Text Processing :: Markup :: XML',
+        'Programming Language :: Python :: 3.4'
       ],      
       url='http://github.com/cogu/cfile',
       author='Conny Gustafsson',
