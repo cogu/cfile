@@ -235,7 +235,7 @@ class function:
    """
    Creates a function
    """
-   def __init__(self,name,typename='int',const=0,pointer=0,classname="", args=None):
+   def __init__(self, name, typename='int', const=0, pointer=0, classname="", args=None):
       self.name=name
       self.typename=typename
       self.classname=classname
@@ -327,6 +327,15 @@ class hfile(_file):
             text+='\n'      
       text+="\n%s %s\n"%(str(endif()),str(linecomment(self.guard)))
       return text
+   
+   def lines(self):
+      lines=[]
+      lines.append(str(ifndef(self.guard)))
+      lines.append(str(define(self.guard)))
+      lines.append('')
+      lines.extend(self.code.lines())
+      lines.append("\n%s %s\n"%(str(endif()),str(linecomment(self.guard))))
+      return lines
 
 class initializer:
    def __init__(self,typeref,expression):
