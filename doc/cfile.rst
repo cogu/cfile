@@ -1,8 +1,10 @@
 cfile
 =====
 
+C code generator for python
 
-sequence
+
+Sequence
 --------
 
 .. py:class:: sequence()
@@ -15,7 +17,7 @@ Example::
    import cfile as C
    code = C.sequence()
    
-block
+Block
 -----
 
 .. py:class:: block(indent=None, innerIndent=0, head=None, tail=None)
@@ -36,9 +38,9 @@ appends item to the sequence. the item can be any of:
 * cfile.statement: A statement.
 * cfile.sequence: another sequence.
 * cfile.block: A block (a block is also a sequence).
-* other things. 
+
    
-variable
+Variable
 --------
 
 .. py:class:: variable(name, typename='int', static=0, const=0, pointer=0, alias=0,extern=0, array=None)
@@ -46,11 +48,44 @@ variable
 Creates a C variable. Note that static, const, pointer and extern can be initialized with True/False as well as 0,1,2 etc.
 
 
-function
+Function
 --------
 
-.. py::class:: function(name, typename='int', const=0, pointer=0, classname="", args=None)
+.. py:class:: function(name, typename='int', static=0, const=0, pointer=0, classname="", args=None)
 
-Creates a C function. Note that const and pointer can be initialized with True/False as well as 0,1,2 etc.
+Parameters
+~~~~~~~~~~
+
+**Name**: Name of new function (string)
+
+**typename**: return type name (string). Default='int'.
+
+**static**: Controls the static property. Default=0.
+
+* 0: function is not const
+* 1: function is const
+* False: See 0
+* True: See 1
+
+**const**: Controls the const property. Default=0.
+
+* 0: function is not const
+* 1: function is const
+* False: See 0
+* True: See 1
+
+**pointer**: Controls the pointer property. Default=0.
+
+* 0: return type is not pointer
+* 1: return type is pointer (*)
+* False: See 0
+* True: See 1
+* 2: return type is pointer to pointer (\**)
+* 3: return type is pointer to pointer to pointer (\***)
+
+**classname**: C++ class name
+
+**args**: Function arguments (list of cfile.variable objects). Arguments can also be added after the function has been created.
 
 
+ 

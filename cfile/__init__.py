@@ -85,7 +85,8 @@ class blank:
 
 class sequence():
    def __init__(self):
-      self.elements=[]
+      self.elements=[]      
+   
    def __str__(self):
       result = []
       for elem in self.elements:
@@ -98,13 +99,20 @@ class sequence():
          if not isinstance(elem,blank):            
             result.append('\n')
       return ''.join(result)
+   
+   def __len__(self):
+      return len(self.elements)
+   
    def append(self,elem):
       self.elements.append(elem)
+      return self
+   
    def extend(self,seq):
       if isinstance(seq, sequence):
          self.elements.extend(seq.elements)
       else:
          self.elements.extend(seq)
+      return self
    
    def lines(self):
       lines=[]
@@ -169,7 +177,7 @@ class block():
    
 
 class variable():
-   def __init__(self,name,typename='int',static=0,const=0, pointer=0,alias=0,extern=0, array=None):
+   def __init__(self,name,typename='int',static=0, const=0, pointer=0,alias=0,extern=0, array=None):
       self.name=name
       self.typename=typename      
       self.array=array
@@ -235,7 +243,7 @@ class function:
    """
    Creates a function
    """
-   def __init__(self, name, typename='int', const=0, pointer=0, classname="", args=None):
+   def __init__(self, name, typename='int', static=0, const=0, pointer=0, classname="", args=None):
       self.name=name
       self.typename=typename
       self.classname=classname
@@ -348,12 +356,12 @@ class initializer:
          return str(self.expression)
 
 class typedef:
-   def __init__(self, typeinfo, name):
-      self.typeinfo=typeinfo
+   def __init__(self, basetype, name):
+      self.basetype=basetype
       self.name=str(name)
    
    def __str__(self):
-      return 'typedef %s %s'%(str(self.typeinfo),self.name)
+      return 'typedef %s %s'%(str(self.basetype),self.name)
    
 class struct:
    def __init__(self, name=None, block=None, typedef=None):
