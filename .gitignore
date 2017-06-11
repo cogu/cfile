@@ -13,5 +13,6 @@ __pycache__/
 /doc/make.bat
 /doc/_build/
 
+/test/doc/
 /*.komodoproject
 

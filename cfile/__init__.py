@@ -146,7 +146,7 @@ class block():
          lines=[]
          for item in self.code.elements:
             if hasattr(item, 'indent') and item.indent is None:               
-               item.indent = self.innerIndent
+               item.indent = self.indent+self.innerIndent
             lines.append(str(item))
          text+='\n'.join(lines)+'\n'         
          text+=indentStr+'}'
@@ -167,8 +167,11 @@ class block():
       tail=' '+str(self.tail) if self.tail is not None else ''         
       lines.append('%s{'%(head))
       for item in self.code.elements:
+         indent=0
+         if (self.indent is not None) and (self.indent > 0):
+            indent=self.indent
          if hasattr(item, 'indent') and item.indent is None:               
-            item.indent = self.innerIndent
+            item.indent = indent+self.innerIndent
             lines.append(str(item))
          else:
             lines.append(str(item))
@@ -247,7 +250,7 @@ class function:
       self.name=name
       self.typename=typename
       self.classname=classname
-      self.arguments=[] if args is None else list(args)
+      self.args=[] if args is None else list(args)
       if isinstance(pointer,int):
          self.pointer=pointer
       elif isinstance(pointer,bool):
@@ -263,14 +266,14 @@ class function:
    def add_arg(self,arg):
       if not isinstance(arg,variable):
          raise ValueError('expected variable object')
-      self.arguments.append(arg)
+      self.args.append(arg)
       return self
    def __str__(self):
       const1='const ' if self.const & 1 else ''
       pointer1='*'*self.pointer+' ' if self.pointer>0 else ''
       classname='%s::'%self.classname if len(self.classname)>0 else ""
-      if len (self.arguments)>0:
-         s='%s%s %s%s%s(%s)'%(const1,self.typename,pointer1,classname,self.name,', '.join([str(x) for x in self.arguments]))
+      if len (self.args)>0:
+         s='%s%s %s%s%s(%s)'%(const1,self.typename,pointer1,classname,self.name,', '.join([str(x) for x in self.args]))
       else:
          s='%s%s %s%s%s(%s)'%(const1,self.typename,pointer1,classname,self.name,'void')
       return s
@@ -283,14 +286,14 @@ class fcall(object):
    """
    def __init__(self,name, params=None):
       self.name=name
-      self.parameters=[] if params is None else list(params)
+      self.params=[] if params is None else list(params)
    def add_param(self,arg):
       if not isinstance(arg,str):
          raise ValueError('expected string object')
-      self.parameters.append(arg)
+      self.params.append(arg)
       return self
    def __str__(self):
-      s='%s(%s)'%(self.name,', '.join([str(x) for x in self.parameters]))
+      s='%s(%s)'%(self.name,', '.join([str(x) for x in self.params]))
       return s
 
 class _file(object):

@@ -4,21 +4,25 @@ cfile
 C code generator for python
 
 
-Sequence
---------
+cfile.sequence
+--------------
 
 .. py:class:: sequence()
 
-Returns a new sequence. A sequence is simply a list where each item in the list represents a line of code.
-Use sequence.append to insert new items to the list. Use sequence.lines() to get the sequence as strings.
+Returns a new sequence. A sequence is simply a list where each item in the list are statements or blocks.
+Use sequence.append to insert a new items to the list. Use sequence.lines() to get the sequence as strings.
+Use sequence.extend() to extend current sequence with items from another sequence.
 
 Example::
 
    import cfile as C
    code = C.sequence()
+   var_name='a'
+   code.append(C.statement('%s=4'%(var_name)))
+   print(str(code))
    
-Block
------
+cfile.block
+-----------
 
 .. py:class:: block(indent=None, innerIndent=0, head=None, tail=None)
 
@@ -40,21 +44,21 @@ appends item to the sequence. the item can be any of:
 * cfile.block: A block (a block is also a sequence).
 
    
-Variable
---------
+cfile.variable
+--------------
 
 .. py:class:: variable(name, typename='int', static=0, const=0, pointer=0, alias=0,extern=0, array=None)
 
 Creates a C variable. Note that static, const, pointer and extern can be initialized with True/False as well as 0,1,2 etc.
 
 
-Function
---------
+cfile.function
+--------------
 
 .. py:class:: function(name, typename='int', static=0, const=0, pointer=0, classname="", args=None)
 
-Parameters
-~~~~~~~~~~
+Constructor parameters
+~~~~~~~~~~~~~~~~~~~~~~
 
 **Name**: Name of new function (string)
 
@@ -87,5 +91,41 @@ Parameters
 
 **args**: Function arguments (list of cfile.variable objects). Arguments can also be added after the function has been created.
 
+Attributes
+~~~~~~~~~~
 
- 
+**name**: name of the function.
+
+**typename**: name of the return type of the function.
+
+**args**: list of function arguments (expected type is cfile.variable).
+
+**classname**: Very rudimentary support of c++ class name.
+
+cfile.fcall
+-----------
+
+.. py:class:: fcall(name, params=None)
+
+A C function call expression.
+
+Constructor parameters
+~~~~~~~~~~~~~~~~~~~~~~
+
+**name**: Name of the function that is being called
+**params**: Parameters to the function call. This can be a single expression or a list of expressions
+
+Example::
+
+   import cfile as C
+   func = C.function('add_values', 'int', args=[C.variable('a', 'int'), C.variable('b', 'int')])
+   body = C.block(innerIndent=4)
+   body.append(C.statement('return %s+%s'%(func.args[0].name, func.args[1].name)))   
+   
+   code = C.sequence()
+   code.append(func)
+   code.append(body)
+   code.append(C.blank(1))
+   code.append(C.statement(C.fcall(func.name, ['4', '5'])))
+   print(str(code))
+   
