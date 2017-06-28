@@ -29,12 +29,18 @@ class include:
          return '#include "%s"'%self.filename
 
 class define:
-   def __init__(self,left,right=None):
+   def __init__(self,left,right=None, align=None):
       self.left=left
       self.right=right
+      self.align=align
    def __str__(self):
       if self.right is not None:
-         return "#define %s %s"%(self.left,self.right)
+         if self.align is None:
+            return "#define %s %s"%(self.left,self.right)
+         else:
+            assert(isinstance(self.align, int))
+            fmt = "#define {0:<%s} {1}"%(str(self.align))
+            return fmt.format(self.left,self.right)            
       else:
          return "#define %s"%(self.left)
 
