@@ -5,7 +5,7 @@ def readme():
         return f.read()
 
 setup(name='cfile',
-      version='0.1.3',
+      version='0.1.4',
       description='A python C code generator',
       long_description=readme(),
       classifiers=[
