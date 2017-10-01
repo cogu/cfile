@@ -1,4 +1,5 @@
 import os
+import copy
 
 indentChar=' ' #globally set to space or tab
 #preprocessor
@@ -262,29 +263,60 @@ class function:
       elif isinstance(pointer,bool):
          self.pointer=1 if pointer==True else 0
       else:
-         raise ValueError()    
+         raise ValueError('invalid pointer argument')    
       if isinstance(const,int):
          self.const=const
       elif isinstance(const,bool):
          self.const=1 if const==True else 0
       else:
-         raise ValueError()
+         raise ValueError('invalid const argument')
+      if isinstance(static,int):
+         self.static=static
+      elif isinstance(const,bool):
+         self.static=1 if static==True else 0
+      else:
+         raise ValueError('invalid static argument')
    def add_arg(self,arg):
-      if not isinstance(arg,variable):
-         raise ValueError('expected variable object')
+      if not isinstance(arg,(variable,fptr)):
+         raise ValueError('expected variable or fptr object')
       self.args.append(arg)
       return self
    def __str__(self):
+      static1='static ' if self.static else ''
       const1='const ' if self.const & 1 else ''
       pointer1='*'*self.pointer+' ' if self.pointer>0 else ''
       classname='%s::'%self.classname if len(self.classname)>0 else ""
       if len (self.args)>0:
-         s='%s%s %s%s%s(%s)'%(const1,self.typename,pointer1,classname,self.name,', '.join([str(x) for x in self.args]))
+         s='%s%s%s %s%s%s(%s)'%(static1, const1,self.typename,pointer1,classname,self.name,', '.join([str(x) for x in self.args]))
       else:
-         s='%s%s %s%s%s(%s)'%(const1,self.typename,pointer1,classname,self.name,'void')
+         s='%s%s%s %s%s%s(%s)'%(static1, const1,self.typename,pointer1,classname,self.name,'void')
       return s
    def set_class(self, classname):
       self.classname=classname
+
+class fptr(function):
+   def __init__(self, name, typename='int', static=0, const=0, pointer=0, classname="", args=None):
+      super().__init__(name, typename, static, const, pointer, classname, args)
+   
+   @classmethod
+   def from_func(cls, other, name=None):
+      if name is None:
+         name = other.name
+      func = cls(name, other.typename, other.static, other.const, other.pointer)
+      for arg in other.args:
+         func.add_arg(copy.deepcopy(arg))
+      return func
+         
+   def __str__(self):
+      const1='const ' if self.const & 1 else ''
+      pointer1='*'*self.pointer+' ' if self.pointer>0 else ''
+      
+      if len (self.args)>0:
+         s='%s%s (%s%s)(%s)'%(const1,self.typename,pointer1,self.name,', '.join([str(x) for x in self.args]))
+      else:
+         s='%s%s (%s%s*)(%s)'%(const1,self.typename,pointer1,self.name,'void')
+      return s
+   
 
 class fcall(object):
    """
