@@ -353,6 +353,9 @@ class cfile(_file):
          if newLine == True:
             text+='\n'      
       return text
+   
+   def lines(self):
+      return self.code.lines()
       
             
 class hfile(_file):
