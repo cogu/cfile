@@ -129,10 +129,7 @@ class sequence():
          else:
             lines.extend(str(elem).split('\n'))
       return lines
-   
-         
-   
-   
+
 class block():
    def __init__(self, indent=None, innerIndent=0, head=None, tail=None):
       self.code=sequence()
@@ -147,25 +144,27 @@ class block():
    def extend(self,sequence):
       self.code.extend(sequence)
    def __str__(self):
+      head=str(self.head)+' ' if self.head is not None else ''
+      tail=str(self.tail) if self.tail is not None else ''
       if (self.indent is not None) and (self.indent > 0):
          indentStr = indentChar*self.indent
-         text=indentStr+'{\n'
+         text=indentStr+'%s{\n' % head
          lines=[]
          for item in self.code.elements:
-            if hasattr(item, 'indent') and item.indent is None:               
+            if hasattr(item, 'indent') and item.indent is None:
                item.indent = self.indent+self.innerIndent
             lines.append(str(item))
-         text+='\n'.join(lines)+'\n'         
-         text+=indentStr+'}'
+         text+='\n'.join(lines)+'\n'
+         text+=indentStr+'} %s' % tail
       else:         
-         text='{\n'
+         text='%s{\n' % head
          lines=[]
          for item in self.code.elements:
-            if hasattr(item, 'indent') and item.indent is None:               
-               item.indent = self.innerIndent            
-            lines.append(str(item))            
+            if hasattr(item, 'indent') and item.indent is None:
+               item.indent = self.innerIndent
+            lines.append(str(item))
          text+='\n'.join(lines)+'\n'
-         text+='}'      
+         text+='} %s' % tail
       return text
    
    def lines(self):
