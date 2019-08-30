@@ -145,7 +145,7 @@ class block():
       self.code.extend(sequence)
    def __str__(self):
       head=str(self.head)+' ' if self.head is not None else ''
-      tail=str(self.tail) if self.tail is not None else ''
+      tail=' '+str(self.tail) if self.tail is not None else ''
       if (self.indent is not None) and (self.indent > 0):
          indentStr = indentChar*self.indent
          text=indentStr+'%s{\n' % head
@@ -164,7 +164,7 @@ class block():
                item.indent = self.innerIndent
             lines.append(str(item))
          text+='\n'.join(lines)+'\n'
-         text+='} %s' % tail
+         text+='}%s' % tail
       return text
    
    def lines(self):
