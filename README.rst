@@ -1,20 +1,20 @@
 cfile
 -----
 
-A python C code generator
+A python C code generator.
 
 **Usage**::
 
    >>> import cfile as C
-   >>> test = C.cfile('test.c')
-   >>> test.code.append(C.sysinclude('stdio.h'))
-   >>> test.code.append(C.blank())
-   >>> test.code.append(C.function('main', 'int',).add_arg(C.variable('argc', 'int')).add_arg(C.variable('argv', 'char', pointer=2)))
-   >>> body = C.block(indent=3)
-   >>> body.append(C.statement(C.fcall('printf').add_param(r'"Hello World!\n"')))
+   >>> hello = C.cfile('hello.c')
+   >>> hello.code.append(C.sysinclude('stdio.h'))
+   >>> hello.code.append(C.blank())
+   >>> hello.code.append(C.function('main', 'int',).add_param(C.variable('argc', 'int')).add_param(C.variable('argv', 'char', pointer=2)))
+   >>> body = C.block(innerIndent=3)
+   >>> body.append(C.statement(C.fcall('printf').add_arg(r'"Hello World!\n"')))
    >>> body.append(C.statement('return 0'))
-   >>> test.code.append(body)
-   >>> print(str(test))
+   >>> hello.code.append(body)
+   >>> print(str(hello))
 
    #include <stdio.h>
 

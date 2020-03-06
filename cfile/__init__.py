@@ -90,7 +90,7 @@ class blank:
    def lines(self):
       return ['' for x in range(self.numLines)]
 
-class sequence():
+class sequence:
    def __init__(self):
       self.elements=[]      
    
@@ -130,19 +130,20 @@ class sequence():
             lines.extend(str(elem).split('\n'))
       return lines
 
-class block():
+class block:
    def __init__(self, indent=None, innerIndent=0, head=None, tail=None):
       self.code=sequence()
       self.indent=indent
       self.innerIndent=innerIndent
       self.head=head
       self.tail=tail
-   def insert(self,index,elem):
-      self.code.insert(index,elem)
+
    def append(self,elem):
       self.code.append(elem)
+
    def extend(self,sequence):
       self.code.extend(sequence)
+
    def __str__(self):
       head=str(self.head)+' ' if self.head is not None else ''
       tail=' '+str(self.tail) if self.tail is not None else ''
@@ -185,8 +186,9 @@ class block():
       return lines
    
 
-class variable():
-   def __init__(self,name,typename='int',static=0, const=0, pointer=0,alias=0,extern=0, array=None):
+class variable:
+
+   def __init__(self, name, typename='int', static=0, const=0, pointer=0, alias=0, extern=0, array=None):
       self.name=name
       self.typename=typename      
       self.array=array
@@ -252,11 +254,11 @@ class function:
    """
    Creates a function
    """
-   def __init__(self, name, typename='int', static=0, const=0, pointer=0, classname="", args=None):
+   def __init__(self, name, typename='int', static=0, const=0, pointer=0, classname="", params=None):
       self.name=name
       self.typename=typename
       self.classname=classname
-      self.args=[] if args is None else list(args)
+      self.params=[] if params is None else list(params)
       if isinstance(pointer,int):
          self.pointer=pointer
       elif isinstance(pointer,bool):
@@ -275,18 +277,18 @@ class function:
          self.static=1 if static==True else 0
       else:
          raise ValueError('invalid static argument')
-   def add_arg(self,arg):
-      if not isinstance(arg,(variable,fptr)):
+   def add_param(self, param):
+      if not isinstance(param,(variable, fptr)):
          raise ValueError('expected variable or fptr object')
-      self.args.append(arg)
+      self.params.append(param)
       return self
    def __str__(self):
       static1='static ' if self.static else ''
       const1='const ' if self.const & 1 else ''
       pointer1='*'*self.pointer+' ' if self.pointer>0 else ''
       classname='%s::'%self.classname if len(self.classname)>0 else ""
-      if len (self.args)>0:
-         s='%s%s%s %s%s%s(%s)'%(static1, const1,self.typename,pointer1,classname,self.name,', '.join([str(x) for x in self.args]))
+      if len (self.params)>0:
+         s='%s%s%s %s%s%s(%s)'%(static1, const1,self.typename,pointer1,classname,self.name,', '.join([str(x) for x in self.params]))
       else:
          s='%s%s%s %s%s%s(%s)'%(static1, const1,self.typename,pointer1,classname,self.name,'void')
       return s
@@ -294,24 +296,24 @@ class function:
       self.classname=classname
 
 class fptr(function):
-   def __init__(self, name, typename='int', static=0, const=0, pointer=0, classname="", args=None):
-      super().__init__(name, typename, static, const, pointer, classname, args)
+   def __init__(self, name, typename='int', static=0, const=0, pointer=0, classname="", params=None):
+      super().__init__(name, typename, static, const, pointer, classname, params)
    
    @classmethod
    def from_func(cls, other, name=None):
       if name is None:
          name = other.name
       func = cls(name, other.typename, other.static, other.const, other.pointer)
-      for arg in other.args:
-         func.add_arg(copy.deepcopy(arg))
+      for param in other.params:
+         func.add_param(copy.deepcopy(param))
       return func
          
    def __str__(self):
       const1='const ' if self.const & 1 else ''
       pointer1='*'*self.pointer+' ' if self.pointer>0 else ''
       
-      if len (self.args)>0:
-         s='%s%s (%s%s)(%s)'%(const1,self.typename,pointer1,self.name,', '.join([str(x) for x in self.args]))
+      if len (self.params)>0:
+         s='%s%s (%s%s)(%s)'%(const1,self.typename,pointer1,self.name,', '.join([str(x) for x in self.param]))
       else:
          s='%s%s (%s%s*)(%s)'%(const1,self.typename,pointer1,self.name,'void')
       return s
@@ -321,16 +323,16 @@ class fcall(object):
    """
    Creates a function call
    """
-   def __init__(self,name, params=None):
+   def __init__(self,name, args=None):
       self.name=name
-      self.params=[] if params is None else list(params)
-   def add_param(self,arg):
+      self.args=[] if args is None else list(args)
+   def add_arg(self, arg):
       if not isinstance(arg,str):
          raise ValueError('expected string object')
-      self.params.append(arg)
+      self.args.append(arg)
       return self
    def __str__(self):
-      s='%s(%s)'%(self.name,', '.join([str(x) for x in self.params]))
+      s='%s(%s)'%(self.name,', '.join([str(x) for x in self.args]))
       return s
 
 class _file(object):
