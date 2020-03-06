@@ -8,6 +8,7 @@ setup(name='cfile',
       version='0.1.5',
       description='A python C code generator',
       long_description=readme(),
+      long_description_content_type='text/x-rst',
       classifiers=[
         'Development Status :: 3 - Alpha',
         'License :: OSI Approved :: MIT License',
