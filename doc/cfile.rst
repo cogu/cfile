@@ -20,7 +20,7 @@ Example::
    var_name='a'
    code.append(C.statement('%s=4'%(var_name)))
    print(str(code))
-   
+
 cfile.block
 -----------
 
@@ -30,9 +30,9 @@ Creates a new C block (a block starts with '{' and ends with '}')
 
 .. py:attribute:: block.code
 
-An instance of sequence_.
+An instance of cfile.sequence.
 
-   
+
 .. py::method:: sequence.append(item)
 
 appends item to the sequence. the item can be any of:
@@ -43,7 +43,6 @@ appends item to the sequence. the item can be any of:
 * cfile.sequence: another sequence.
 * cfile.block: A block (a block is also a sequence).
 
-   
 cfile.variable
 --------------
 
@@ -55,7 +54,7 @@ Creates a C variable. Note that static, const, pointer and extern can be initial
 cfile.function
 --------------
 
-.. py:class:: function(name, typename='int', static=0, const=0, pointer=0, classname="", args=None)
+.. py:class:: function(name, typename='int', static=0, const=0, pointer=0, classname="", params=None)
 
 Constructor parameters
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -89,7 +88,8 @@ Constructor parameters
 
 **classname**: C++ class name
 
-**args**: Function arguments (list of cfile.variable objects). Arguments can also be added after the function has been created.
+**params**: Function parameters (list of cfile.variable objects). Parameter(s) can also be added after the function has been
+created using the add_param method.
 
 Attributes
 ~~~~~~~~~~
@@ -98,14 +98,14 @@ Attributes
 
 **typename**: name of the return type of the function.
 
-**args**: list of function arguments (expected type is cfile.variable).
+**params**: list of function parameters (expected type is cfile.variable).
 
 **classname**: Very rudimentary support of c++ class name.
 
 cfile.fcall
 -----------
 
-.. py:class:: fcall(name, params=None)
+.. py:class:: fcall(name, args=None)
 
 A C function call expression.
 
@@ -113,19 +113,18 @@ Constructor parameters
 ~~~~~~~~~~~~~~~~~~~~~~
 
 **name**: Name of the function that is being called
-**params**: Parameters to the function call. This can be a single expression or a list of expressions
+**args**: Arguments of the function call. This can be a single expression or a list of expressions
 
 Example::
 
    import cfile as C
-   func = C.function('add_values', 'int', args=[C.variable('a', 'int'), C.variable('b', 'int')])
+   func = C.function('add_values', 'int', params=[C.variable('a', 'int'), C.variable('b', 'int')])
    body = C.block(innerIndent=4)
-   body.append(C.statement('return %s+%s'%(func.args[0].name, func.args[1].name)))   
-   
+   body.append(C.statement('return %s+%s'%(func.params[0].name, func.params[1].name)))
+
    code = C.sequence()
    code.append(func)
    code.append(body)
    code.append(C.blank(1))
    code.append(C.statement(C.fcall(func.name, ['4', '5'])))
    print(str(code))
-   

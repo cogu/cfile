@@ -26,10 +26,5 @@ A python C code generator
 
 Prerequisites
 -------------
-Python 3.x 
 
-Documentation
--------------
-Documentation is coming soon.
-
-
+Python 3
