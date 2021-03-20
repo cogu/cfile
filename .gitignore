@@ -1,5 +1,4 @@
 # Compiled python modules.
-*.pyc
 __pycache__/
 
 # Setuptools distribution folder.
@@ -7,12 +6,11 @@ __pycache__/
 /build/
 
 # Python egg metadata, regenerated from source files by setuptools.
-/*.egg-info
+/src/cfile.egg-info/*
 
 #sphinx-doc files
 /doc/make.bat
 /doc/_build/
 
-/test/doc/
-/*.komodoproject
+.vscode
 

@@ -1,9 +1,0 @@
-{
-    "python.pythonPath": "/usr/bin/python3",
-    "python.linting.pylintEnabled": true,
-    "python.linting.enabled": true,
-    "restructuredtext.confPath": "${workspaceFolder}/doc",
-    "restructuredtext.linter.extraArgs": [
-        "--ignore D001"
-    ]
-}
