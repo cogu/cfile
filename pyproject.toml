@@ -1,6 +1,13 @@
+[project]
+name = "cfile"
+version = "0.3.0a1"
+description = "A C code generator written in Python 3"
+readme = "README.md"
+requires-python = ">=3.10"
+
 [build-system]
-requires = [
-    "setuptools>=42",
-    "wheel"
-]
+requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
