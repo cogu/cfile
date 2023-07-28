@@ -31,7 +31,7 @@ print(writer.write_str(code))
    }   
 ```
 
-Same example again but with used-defined formatting style:
+Same example again but we ser some formatting style options:
 
 - Opening brace on same line
 - Pointer alignment to the right
