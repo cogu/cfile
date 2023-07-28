@@ -1,16 +1,6 @@
-# Compiled python modules.
-__pycache__/
-
-# Setuptools distribution folder.
-/dist/
-/build/
-
-# Python egg metadata, regenerated from source files by setuptools.
-/src/cfile.egg-info/*
-
-#sphinx-doc files
-/doc/make.bat
-/doc/_build/
-
-.vscode
-
+.venv/
+build/
+sandbox/
+usage_tests/
+**/cfile.egg-info/
+**/__pycache__/
