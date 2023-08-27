@@ -14,15 +14,60 @@ class Directive(Element):
     """
     Preprocessor directive
     """
+    def __init__(self, adjust: int = 0) -> None:
+        self.adjust = adjust
 
 
 class IncludeDirective(Directive):
     """
     Include directive
     """
-    def __init__(self, path_to_file: str, system: bool = False) -> None:
+    def __init__(self, path_to_file: str, system: bool = False, adjust: int = 0) -> None:
+        super().__init__(adjust)
         self.path_to_file = path_to_file
         self.system = system
+
+
+class IfdefDirective(Directive):
+    """
+    Ifdef preprocessor directive
+    """
+    def __init__(self, identifier: str, adjust: int = 0) -> None:
+        super().__init__(adjust)
+        self.identifier = identifier
+
+
+class IfndefDirective(Directive):
+    """
+    Ifndef preprocessor directive
+    """
+    def __init__(self, identifier: str, adjust: int = 0) -> None:
+        super().__init__(adjust)
+        self.identifier = identifier
+
+
+class EndifDirective(Directive):
+    """
+    Endif preprocessor directive
+    """
+
+
+class DefineDirective(Directive):
+    """
+    Preprocessor define directive
+    """
+    def __init__(self, left: str, right: str | None = None, adjust: int = 0) -> None:
+        super().__init__(adjust)
+        self.left = left
+        self.right = right
+
+
+class Extern(Element):
+    """
+    Extern declaration
+    """
+    def __init__(self, language: str) -> None:
+        self.language = language
 
 
 class Comment(Element):
