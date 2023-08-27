@@ -94,7 +94,7 @@ class Writer(Formatter):
     def __init__(self, style: c_style.StyleOptions) -> None:
         super().__init__(style.indent_width, style.indent_char)
         self.style = style
-        self.switcher_elem = {
+        self.switcher_all = {
             "Type": self._write_type,
             "Variable": self._write_variable,
             "Function": self._write_function,
@@ -103,18 +103,20 @@ class Writer(Formatter):
             "FunctionReturn": self._write_func_return,
             "FunctionCall": self._write_func_call,
             "TypeDef": self._write_type_def,
-        }
-        self.switcher_all = {
             "Blank": self._write_blank,
             "Whitespace": self._write_whitespace,
-            "IncludeDirective": self._write_include_directive,
             "LineComment": self._write_line_comment,
             "BlockComment": self._write_block_comment,
             "Block": self._write_block,
             "Statement": self._write_statement,
             "Line": self._write_line_element,
+            "IncludeDirective": self._write_include_directive,
+            "DefineDirective": self._write_define_directive,
+            "IfdefDirective": self._write_ifdef_directive,
+            "IfndefDirective": self._write_ifndef_directive,
+            "EndifDirective": self._write_endif_directive,
+            "Extern": self._write_extern,
         }
-        self.switcher_all.update(self.switcher_elem)
         self.last_element = ElementType.NONE
 
     def write_file(self, sequence: core.Sequence, file_path: str):
@@ -184,6 +186,8 @@ class Writer(Formatter):
                     write_method(elem)
                 else:
                     raise NotImplementedError(f"Found no writer for element {class_name}")
+                if isinstance(elem, core.Directive):
+                    self._eol()
 
     def _write_line_element(self, elem: core.Line) -> None:
         for i, part in enumerate(elem.parts):
@@ -254,13 +258,6 @@ class Writer(Formatter):
             for line in lines[:-1]:
                 self._write_line(line_start + line)
             self._write(lines[-1] + f"{'*'*width}/")
-
-    def _write_include_directive(self, elem: core.IncludeDirective) -> None:
-        if elem.system:
-            self._write_line(f'#include <{elem.path_to_file}>')
-        else:
-            self._write_line(f'#include "{elem.path_to_file}"')
-        self.last_element = ElementType.DIRECTIVE
 
     def _write_type(self, elem: core.Type) -> None:
         """
@@ -404,6 +401,8 @@ class Writer(Formatter):
                 if i:
                     self._write(", ")
                 self._write_variable(param)
+        else:
+            self._write("void")
         self._write(")")
         self.last_element = ElementType.FUNCTION
 
@@ -483,3 +482,35 @@ class Writer(Formatter):
                 self._write(", ")
             self._write_expression(arg)
         self._write(")")
+
+# Preprocessor directives
+
+    def _write_include_directive(self, elem: core.IncludeDirective) -> None:
+        if elem.system:
+            self._write(f'#include <{elem.path_to_file}>')
+        else:
+            self._write(f'#include "{elem.path_to_file}"')
+        self.last_element = ElementType.DIRECTIVE
+
+    def _write_define_directive(self, elem: core.DefineDirective) -> None:
+        if elem.right is not None:
+            self._write(f"#{' '*elem.adjust}define {elem.left} {elem.right}")
+        else:
+            self._write(f"#{' '*elem.adjust}define {elem.left}")
+        self.last_element = ElementType.DIRECTIVE
+
+    def _write_ifdef_directive(self, elem: core.IfdefDirective) -> None:
+        self._write(f"#{' '*elem.adjust}ifdef {elem.identifier}")
+        self.last_element = ElementType.DIRECTIVE
+
+    def _write_ifndef_directive(self, elem: core.IfndefDirective) -> None:
+        self._write(f"#{' '*elem.adjust}ifndef {elem.identifier}")
+        self.last_element = ElementType.DIRECTIVE
+
+    def _write_endif_directive(self, elem: core.EndifDirective) -> None:
+        self._write(f"#{' '*elem.adjust}endif")
+        self.last_element = ElementType.DIRECTIVE
+
+    def _write_extern(self, elem: core.Extern) -> None:
+        self._write(f'extern "{elem.language}"')
+        self.last_element = ElementType.DIRECTIVE

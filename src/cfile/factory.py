@@ -66,17 +66,47 @@ class CFactory:
         """
         return core.Sequence()
 
-    def include(self, path_to_file: str) -> core.IncludeDirective:
+    def include(self, path_to_file: str, adjust: int = 0) -> core.IncludeDirective:
         """
         New include directive
         """
-        return core.IncludeDirective(path_to_file)
+        return core.IncludeDirective(path_to_file, adjust=adjust)
 
-    def sysinclude(self, path_to_file) -> core.IncludeDirective:
+    def sysinclude(self, path_to_file, adjust: int = 0) -> core.IncludeDirective:
         """
         New system-level include directive
         """
-        return core.IncludeDirective(path_to_file, system=True)
+        return core.IncludeDirective(path_to_file, system=True, adjust=adjust)
+
+    def ifdef(self, identifier, adjust: int = 0) -> core.IfdefDirective:
+        """
+        New ifdef preprocessor directove
+        """
+        return core.IfdefDirective(identifier, adjust=adjust)
+
+    def ifndef(self, identifier, adjust: int = 0) -> core.IfndefDirective:
+        """
+        New ifndef preprocessor directove
+        """
+        return core.IfndefDirective(identifier, adjust=adjust)
+
+    def endif(self, adjust: int = 0) -> core.EndifDirective:
+        """
+        New endif preprocessor directove
+        """
+        return core.EndifDirective(adjust=adjust)
+
+    def define(self, left: str, right: str | None = None, adjust: int = 0) -> core.DefineDirective:
+        """
+        New define preprocessor directive
+        """
+        return core.DefineDirective(left, right, adjust=adjust)
+
+    def extern(self, language: str) -> core.Extern:
+        """
+        New extern declaration
+        """
+        return core.Extern(language)
 
     def block(self) -> core.Block():
         """

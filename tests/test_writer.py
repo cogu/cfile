@@ -85,7 +85,7 @@ Line 4"""
         self.assertEqual(output, expected)
 
 
-class TestIncludeDirective(unittest.TestCase):
+class TestPreprocessor(unittest.TestCase):
 
     def test_normal_include(self):
         element = core.IncludeDirective("path/to/file.h")
@@ -98,6 +98,60 @@ class TestIncludeDirective(unittest.TestCase):
         writer = cfile.Writer(cfile.StyleOptions())
         output = writer.write_str_elem(element)
         self.assertEqual(output, '#include <stdio.h>')
+
+    def test_define_with_left_part_only(self):
+        element = core.DefineDirective("INCLUDE_GUARD")
+        writer = cfile.Writer(cfile.StyleOptions())
+        output = writer.write_str_elem(element)
+        self.assertEqual(output, '#define INCLUDE_GUARD')
+
+    def test_define_with_left_and_right(self):
+        element = core.DefineDirective("MAX(a,b)", "int_max(a,b)")
+        writer = cfile.Writer(cfile.StyleOptions())
+        output = writer.write_str_elem(element)
+        self.assertEqual(output, '#define MAX(a,b) int_max(a,b)')
+
+    def test_define_with_left_part__adjusted(self):
+        element = core.DefineDirective("IDENTIFIER", adjust=4)
+        writer = cfile.Writer(cfile.StyleOptions())
+        output = writer.write_str_elem(element)
+        self.assertEqual(output, '#    define IDENTIFIER')
+
+    def test_ifdef(self):
+        element = core.IfdefDirective("IDENTIFIER")
+        writer = cfile.Writer(cfile.StyleOptions())
+        output = writer.write_str_elem(element)
+        self.assertEqual(output, '#ifdef IDENTIFIER')
+
+    def test_ifdef__adjusted(self):
+        element = core.IfdefDirective("IDENTIFIER", adjust=2)
+        writer = cfile.Writer(cfile.StyleOptions())
+        output = writer.write_str_elem(element)
+        self.assertEqual(output, '#  ifdef IDENTIFIER')
+
+    def test_ifndef(self):
+        element = core.IfndefDirective("IDENTIFIER")
+        writer = cfile.Writer(cfile.StyleOptions())
+        output = writer.write_str_elem(element)
+        self.assertEqual(output, '#ifndef IDENTIFIER')
+
+    def test_ifndef__adjusted(self):
+        element = core.IfndefDirective("IDENTIFIER", adjust=2)
+        writer = cfile.Writer(cfile.StyleOptions())
+        output = writer.write_str_elem(element)
+        self.assertEqual(output, '#  ifndef IDENTIFIER')
+
+    def test_endif(self):
+        element = core.EndifDirective()
+        writer = cfile.Writer(cfile.StyleOptions())
+        output = writer.write_str_elem(element)
+        self.assertEqual(output, '#endif')
+
+    def test_endif__adjusted(self):
+        element = core.EndifDirective(adjust=4)
+        writer = cfile.Writer(cfile.StyleOptions())
+        output = writer.write_str_elem(element)
+        self.assertEqual(output, '#    endif')
 
 
 class TestType(unittest.TestCase):
@@ -256,31 +310,31 @@ class TestVariable(unittest.TestCase):
         self.assertEqual(output, "const int **const value")
 
 
-class FunctionTest(unittest.TestCase):
+class TestFunction(unittest.TestCase):
 
     def test_void_no_args(self):
         element = core.Function("my_func", "void")
         writer = cfile.Writer(cfile.StyleOptions())
         output = writer.write_str_elem(element)
-        self.assertEqual(output, "void my_func()")
+        self.assertEqual(output, "void my_func(void)")
 
     def test_extern_void_no_args(self):
         element = core.Function("my_func", "void", extern=True)
         writer = cfile.Writer(cfile.StyleOptions())
         output = writer.write_str_elem(element)
-        self.assertEqual(output, "extern void my_func()")
+        self.assertEqual(output, "extern void my_func(void)")
 
     def test_static_void_no_args(self):
         element = core.Function("my_func", "void", static=True)
         writer = cfile.Writer(cfile.StyleOptions())
         output = writer.write_str_elem(element)
-        self.assertEqual(output, "static void my_func()")
+        self.assertEqual(output, "static void my_func(void)")
 
     def test_int_ptr_no_args(self):
         element = core.Function("my_func", core.Type("int", pointer=True))
         writer = cfile.Writer(cfile.StyleOptions())
         output = writer.write_str_elem(element)
-        self.assertEqual(output, "int* my_func()")
+        self.assertEqual(output, "int* my_func(void)")
 
     def test_void_int_arg_using_make(self):
         element = core.Function("my_func", "void").make_param("arg1", "int")
@@ -362,7 +416,7 @@ class TestBlock(unittest.TestCase):
         seq.append(core.Block())
         writer = cfile.Writer(cfile.StyleOptions(break_before_braces=style.BreakBeforeBraces.ALLMAN))
         output = writer.write_str(seq)
-        expected = "\n".join(["void f()", "{", "}", ""])
+        expected = "\n".join(["void f(void)", "{", "}", ""])
         self.assertEqual(output, expected)
 
     def test_attach_brace_to_function(self):
@@ -371,7 +425,7 @@ class TestBlock(unittest.TestCase):
         seq.append(core.Block())
         writer = cfile.Writer(cfile.StyleOptions(break_before_braces=style.BreakBeforeBraces.ATTACH))
         output = writer.write_str(seq)
-        expected = "\n".join(["void f() {", "}", ""])
+        expected = "\n".join(["void f(void) {", "}", ""])
         self.assertEqual(output, expected)
 
     def test_variable_declarations(self):
@@ -522,6 +576,26 @@ class TestLine(unittest.TestCase):
         writer = cfile.Writer(cfile.StyleOptions())
         output = writer.write_str_elem(element, trim_end=False)
         self.assertEqual(output, "int value; //Comment\n")
+
+
+class TestExtern(unittest.TestCase):
+
+    def test_typical_cplusplus_check(self):
+        code = core.Sequence()
+        code.append(core.IfdefDirective("__cplusplus"))
+        code.append(core.Line(core.Extern("C")))
+        code.append(core.Line("{"))
+        code.append(core.Line("}"))
+        code.append([core.EndifDirective(), core.LineComment(" __clpusplus")])
+        writer = cfile.Writer(cfile.StyleOptions())
+        output = writer.write_str(code)
+        expected = """#ifdef __cplusplus
+extern "C"
+{
+}
+#endif // __clpusplus
+"""
+        self.assertEqual(output, expected)
 
 
 if __name__ == '__main__':
