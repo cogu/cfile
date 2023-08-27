@@ -22,6 +22,7 @@ class ElementType(Enum):
     FUNCTION = 6
     BLOCK_START = 7
     BLOCK_END = 8
+    TYPEDEF = 9
 
 
 class Formatter:
@@ -100,7 +101,8 @@ class Writer(Formatter):
             "Assignment": self._write_assignment,
             "StringLiteral": self._write_string_literal,
             "FunctionReturn": self._write_func_return,
-            "FunctionCall": self._write_func_call
+            "FunctionCall": self._write_func_call,
+            "TypeDef": self._write_type_def,
         }
         self.switcher_all = {
             "Blank": self._write_blank,
@@ -233,10 +235,10 @@ class Writer(Formatter):
         """
         Writes type name and pointer
         """
-        if isinstance(elem.type_ref, str):
-            result = elem.type_ref
+        if isinstance(elem.base_type, str):
+            result = elem.base_type
         else:
-            result = self._format_type(elem.type_ref)
+            result = self._format_type(elem.base_type)
         if elem.pointer:
             if self.style.pointer_alignment == c_style.Alignment.LEFT:
                 result += "*"
@@ -282,12 +284,54 @@ class Writer(Formatter):
                 else:
                     raise ValueError(self.style.pointer_alignment)
         else:
-            result += " "
+            if not (elem.data_type.pointer and self.style.pointer_alignment == c_style.Alignment.RIGHT):
+                result += " "
         result += elem.name
         if elem.array is not None:
             result += f"[{elem.array}]"
         self._write(result)
         self.last_element = ElementType.VARIABLE
+
+    def _write_type_def(self, elem: core.TypeDef):
+        """
+        Writes typedef
+        """
+        self._write("typedef ")
+        self._write_type(elem.data_type)
+        result = ""
+        if elem.pointer:
+            if elem.const:
+                if self.style.space_around_pointer_qualifiers == c_style.SpaceLocation.DEFAULT:
+                    if self.style.pointer_alignment == c_style.Alignment.LEFT:
+                        result += "* const "
+                    elif self.style.pointer_alignment == c_style.Alignment.RIGHT:
+                        result += "*const "
+                    elif self.style.pointer_alignment == c_style.Alignment.MIDDLE:
+                        result += " * const "
+                    else:
+                        raise ValueError(self.style.pointer_alignment)
+                else:
+                    raise NotImplementedError("Only default space location supported for pointer qualifiers")
+            else:
+                if self.style.pointer_alignment == c_style.Alignment.LEFT:
+                    result += "* "
+                elif self.style.pointer_alignment == c_style.Alignment.RIGHT:
+                    if elem.data_type.pointer:
+                        result += "*"
+                    else:
+                        result += " *"
+                elif self.style.pointer_alignment == c_style.Alignment.MIDDLE:
+                    result += " * "
+                else:
+                    raise ValueError(self.style.pointer_alignment)
+        else:
+            if not (elem.data_type.pointer and self.style.pointer_alignment == c_style.Alignment.RIGHT):
+                result += " "
+        result += elem.name
+        if elem.array is not None:
+            result += f"[{elem.array}]"
+        self._write(result)
+        self.last_element = ElementType.TYPEDEF
 
     def _write_function(self, elem: core.Function) -> None:
         """
