@@ -127,13 +127,13 @@ class CFactory:
         """
         return core.StringLiteral(text)
 
-    def f_call(self, name: str, *args) -> core.FunctionCall:
+    def func_call(self, name: str, *args) -> core.FunctionCall:
         """
         New function call
         """
         return core.FunctionCall(name, *args)
 
-    def f_return(self, expression: int | float | str | core.Element) -> core.FunctionReturn:
+    def func_return(self, expression: int | float | str | core.Element) -> core.FunctionReturn:
         """
         New return expression
         """

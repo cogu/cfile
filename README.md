@@ -14,8 +14,8 @@ code.append(C.blank())
 char_ptr_type = C.type("char", pointer=True)
 code.append(C.function("main", "int").make_param("argc", "int").make_param("argv", char_ptr_type, pointer=True))
 main_body = C.block()
-main_body.append(C.statement(C.f_call("printf", C.str_literal(r"Hello World\n"))))
-main_body.append(C.statement(C.f_return(0)))
+main_body.append(C.statement(C.func_call("printf", C.str_literal(r"Hello World\n"))))
+main_body.append(C.statement(C.func_return(0)))
 code.append(main_body)
 writer = cfile.Writer(cfile.StyleOptions())
 print(writer.write_str(code))
@@ -28,7 +28,7 @@ print(writer.write_str(code))
    {
       printf("Hello World!\n");
       return 0;
-   }   
+   }
 ```
 
 Same example again but we ser some formatting style options:
@@ -46,8 +46,8 @@ code.append(C.blank())
 char_ptr_type = C.type("char", pointer=True)
 code.append(C.function("main", "int").make_param("argc", "int").make_param("argv", char_ptr_type, pointer=True))
 main_body = C.block()
-main_body.append(C.statement(C.f_call("printf", C.str_literal(r"Hello World\n"))))
-main_body.append(C.statement(C.f_return(0)))
+main_body.append(C.statement(C.func_call("printf", C.str_literal(r"Hello World\n"))))
+main_body.append(C.statement(C.func_return(0)))
 code.append(main_body)
 style = cfile.StyleOptions(break_before_braces=cfile.BreakBeforeBraces.ATTACH,
                            pointer_alignment=cfile.Alignment.RIGHT)
@@ -61,7 +61,7 @@ print(writer.write_str(code))
    int main(int argc, char **argv) {
       printf("Hello World!\n");
       return 0;
-   }   
+   }
 ```
 
 ## Requires
