@@ -69,12 +69,12 @@ class Type(Element):
     Data type
     """
     def __init__(self,
-                 type_ref: Union[str, "Type"],
+                 base_type: Union[str, "Type"],
                  const: bool = False,
                  pointer: bool = False,
                  volatile: bool = False,
                  array: int | None = None) -> None:  # Only used for typedefs to other array types
-        self.type_ref = type_ref
+        self.base_type = base_type
         self.const = const
         self.volatile = volatile
         self.pointer = pointer
@@ -103,7 +103,6 @@ class Variable(Element):
                  pointer: bool = False,
                  extern: bool = False,
                  static: bool = False,
-
                  array: int | None = None) -> None:
         self.name = name
         self.const = const
@@ -128,6 +127,40 @@ class Variable(Element):
             return self.static
         if name == "extern":
             return self.extern
+        else:
+            raise KeyError(name)
+
+
+class TypeDef(Element):
+    """
+    Type definition
+
+    A type definition is pretty much identical to a variable declaration
+    but it has the keyword "typedef" in front and lacks storage qualifiers
+    """
+    def __init__(self,
+                 name: str,
+                 data_type: str | Type,
+                 const: bool = False,    # Only used as pointer qualifier
+                 pointer: bool = False,
+                 array: int | None = None) -> None:
+        self.name = name
+        self.const = const
+        self.pointer = pointer
+        self.array = array
+        if isinstance(data_type, Type):
+            self.data_type = data_type
+        elif isinstance(data_type, str):
+            self.data_type = Type(data_type)
+        else:
+            raise TypeError(str(type(data_type)))
+
+    def qualifier(self, name) -> bool:
+        """
+        Returns the status of named qualifier
+        """
+        if name == "const":
+            return self.const  # pointer qualifier, not the same as as type qualifier
         else:
             raise KeyError(name)
 
