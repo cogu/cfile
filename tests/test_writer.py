@@ -54,6 +54,36 @@ Line 3
 Line 4 */"""
         self.assertEqual(output, expected)
 
+    def test_block_comment_with_user_defined_width_and_line_start__str_input(self):
+        comment = """Line 1
+Line 2
+Line 3
+Line 4"""
+        element = core.BlockComment(comment, width=10, line_start="* ")
+        writer = cfile.Writer(cfile.StyleOptions())
+        output = writer.write_str_elem(element)
+        expected = """/**********
+* Line 1
+* Line 2
+* Line 3
+* Line 4
+***********/"""
+        self.assertEqual(output, expected)
+
+    def test_block_comment_with_user_defined_width_and_line_start__list_input(self):
+        comment = ["Line 1", "Line 2", "Line 3", "Line 4"]
+        element = core.BlockComment(comment, width=10, line_start="* ")
+        writer = cfile.Writer(cfile.StyleOptions())
+        output = writer.write_str_elem(element, trim_end=False)
+        expected = """/**********
+* Line 1
+* Line 2
+* Line 3
+* Line 4
+***********/
+"""
+        self.assertEqual(output, expected)
+
 
 class TestIncludeDirective(unittest.TestCase):
 
@@ -307,6 +337,22 @@ class TestSequence(unittest.TestCase):
         expected = "static int a;\n" + "static void* b;\n"
         self.assertEqual(output, expected)
 
+    def test_statement_and_comment_using_line_element(self):
+        seq = core.Sequence()
+        seq.append(core.Line([core.Statement(core.Variable("a", "int")), core.BlockComment(" Comment ")]))
+        writer = cfile.Writer(cfile.StyleOptions())
+        output = writer.write_str(seq)
+        expected = "int a; /* Comment */\n"
+        self.assertEqual(output, expected)
+
+    def test_statement_and_comment_using_python_list(self):
+        seq = core.Sequence()
+        seq.append([core.Statement(core.Variable("a", "int")), core.BlockComment(" Comment ")])
+        writer = cfile.Writer(cfile.StyleOptions())
+        output = writer.write_str(seq)
+        expected = "int a; /* Comment */\n"
+        self.assertEqual(output, expected)
+
 
 class TestBlock(unittest.TestCase):
 
@@ -461,6 +507,21 @@ class TestTypeDef(unittest.TestCase):
         writer = cfile.Writer(cfile.StyleOptions())
         output = writer.write_str_elem(element)
         self.assertEqual(output, "typedef int** MyIntPtrPtr")
+
+
+class TestLine(unittest.TestCase):
+
+    def test_str_line(self):
+        element = core.Line("Any code expression")
+        writer = cfile.Writer(cfile.StyleOptions())
+        output = writer.write_str_elem(element, trim_end=False)
+        self.assertEqual(output, "Any code expression\n")
+
+    def test_statement_with_comment(self):
+        element = core.Line([core.Statement(core.Variable("value", "int")), core.LineComment("Comment")])
+        writer = cfile.Writer(cfile.StyleOptions())
+        output = writer.write_str_elem(element, trim_end=False)
+        self.assertEqual(output, "int value; //Comment\n")
 
 
 if __name__ == '__main__':

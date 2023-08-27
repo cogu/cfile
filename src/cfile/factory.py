@@ -32,23 +32,33 @@ class CFactory:
         """
         return core.Blank()
 
+    def line(self, inner: Any) -> core.Blank:
+        """
+        Like statement but doesn't add ';' before new-line.
+        """
+        return core.Line(inner)
+
     def whitespace(self, width: int) -> core.Whitespace:
         """
         White space of user-defined length
         """
         return core.Whitespace(width)
 
-    def line_comment(self, text) -> core.LineComment:
+    def line_comment(self, text: str, adjust: int = 1) -> core.LineComment:
         """
         New line comment
         """
-        return core.LineComment(text)
+        return core.LineComment(text, adjust)
 
-    def block_comment(self, text) -> core.BlockComment:
+    def block_comment(self,
+                      text: str | list[str],
+                      adjust: int = 1,
+                      width: int = 0,
+                      line_start: str = "") -> core.BlockComment:
         """
         New block comment
         """
-        return core.BlockComment(text)
+        return core.BlockComment(text, adjust, width, line_start)
 
     def sequence(self) -> core.Sequence:
         """

@@ -4,7 +4,13 @@ cfile core
 from typing import Union, Any
 
 
-class Directive:
+class Element:
+    """
+    A code element, for example an expression
+    """
+
+
+class Directive(Element):
     """
     Preprocessor directive
     """
@@ -19,21 +25,31 @@ class IncludeDirective(Directive):
         self.system = system
 
 
-class Comment:
+class Comment(Element):
     """
     Comment base
+    adjust: Adds spaces before comment begins to allow right-adjustment
     """
-    def __init__(self, text: str) -> None:
+    def __init__(self, text: str, adjust: int = 1) -> None:
         self.text = text
+        self.adjust = adjust
 
 
 class BlockComment(Comment):
     """
     Block Comment
+    width: When > 0, sets the number of asterisks used on first and last line.
+           Also puts the text between first and last line.
+    line_start: Combine with width > 0. Puts this string at beginning of each line
+                inside the comment
     """
-    def __init__(self, text: str, width=1) -> None:
-        super().__init__(text)
-        self.width = width  # how many asterisk characters to generate before/after the slash
+    def __init__(self,
+                 text: str | list[str],
+                 adjust: int = 1, width: int = 0,
+                 line_start: str = "", ) -> None:
+        super().__init__(text, adjust)
+        self.width = width
+        self.line_start = line_start
 
 
 class LineComment(Comment):
@@ -42,7 +58,7 @@ class LineComment(Comment):
     """
 
 
-class Whitespace:
+class Whitespace(Element):
     """
     Whitespace
     """
@@ -58,10 +74,17 @@ class Blank(Whitespace):
         super().__init__(0)
 
 
-class Element:
+class Line(Element):
     """
-    A code element, for example an expression
+    Adds a newline once all inner parts have been written
     """
+    def __init__(self, parts: str | Element | list) -> None:
+        if isinstance(parts, (str, Element)):
+            self.parts = [parts]
+        elif isinstance(parts, list):
+            self.parts = parts
+        else:
+            raise TypeError("Invalid type:" + str(type(parts)))
 
 
 class Type(Element):

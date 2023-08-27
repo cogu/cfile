@@ -112,6 +112,7 @@ class Writer(Formatter):
             "BlockComment": self._write_block_comment,
             "Block": self._write_block,
             "Statement": self._write_statement,
+            "Line": self._write_line_element,
         }
         self.switcher_all.update(self.switcher_elem)
         self.last_element = ElementType.NONE
@@ -128,17 +129,19 @@ class Writer(Formatter):
         """
         Writes the sequence to string using pre-selected format style
         """
+        assert isinstance(sequence, core.Sequence)
         self._str_open()
         self._write_sequence(sequence)
         return self.fh.getvalue()
 
-    def write_str_elem(self, elem: Any):
+    def write_str_elem(self, elem: Any, trim_end: bool = True) -> str:
         """
         Writes single item to string using pre-selected format style
         """
         self._str_open()
         self._write_element(elem)
-        return self.fh.getvalue().removesuffix("\n")
+        value = self.fh.getvalue()
+        return value.removesuffix("\n") if trim_end else value
 
     def _write_element(self, elem: Any) -> None:
         class_name = elem.__class__.__name__
@@ -153,21 +156,57 @@ class Writer(Formatter):
         Writes a sequence
         """
         for elem in sequence.elements:
-            if isinstance(elem, core.Function):
+            if isinstance(elem, list):
+                tmp = core.Line(elem)
+                self._start_line()
+                self._write_line_element(tmp)
+            elif isinstance(elem, core.Function):
                 self._start_line()
                 self._write_function(elem)
             elif isinstance(elem, core.Statement):
                 self._start_line()
                 self._write_statement(elem)
+                self._eol()
+            elif isinstance(elem, core.LineComment):
+                self._start_line()
+                self._write_line_comment(elem)
+                self._eol()
             elif isinstance(elem, core.Block):
                 self._start_line()
                 self._write_block(elem)
-            elif isinstance(elem, core.IncludeDirective):
-                self._write_include_directive(elem)
-            elif isinstance(elem, core.Blank):
-                self._write_blank(elem)
+            elif isinstance(elem, core.Line):
+                self._start_line()
+                self._write_line_element(elem)
             else:
-                raise NotImplementedError(str(type(elem)))
+                class_name = elem.__class__.__name__
+                write_method = self.switcher_all.get(class_name, None)
+                if write_method is not None:
+                    write_method(elem)
+                else:
+                    raise NotImplementedError(f"Found no writer for element {class_name}")
+
+    def _write_line_element(self, elem: core.Line) -> None:
+        for i, part in enumerate(elem.parts):
+            if i > 0:
+                if isinstance(part, core.Comment):
+                    self._write(" " * part.adjust)
+                else:
+                    self._write(" ")
+            self._write_line_part(part)
+        self._eol()
+
+    def _write_line_part(self, elem: str | core.Element) -> None:
+        if isinstance(elem, core.Element):
+            class_name = elem.__class__.__name__
+            write_method = self.switcher_all.get(class_name, None)
+            if write_method is not None:
+                write_method(elem)
+            else:
+                raise NotImplementedError(f"Found no writer for element {class_name}")
+        elif isinstance(elem, str):
+            self._write(elem)
+        else:
+            raise NotImplementedError(str(type(elem)))
 
     def _write_blank(self, white_space: core.Blank) -> None:  # pylint: disable=unused-argument
         """
@@ -185,19 +224,36 @@ class Writer(Formatter):
         """
         Writes line comment
         """
-        self._write_line("//" + elem.text)
+        self._write("//" + elem.text)
         self.last_element = ElementType.COMMENT
 
     def _write_block_comment(self, elem: core.BlockComment) -> None:
         """
         Writes block comment
         """
-        lines = elem.text.splitlines()
-        self._write("/*")
-        for line in lines[:-1]:
-            self._write_line(line)
-        self._write(lines[-1] + "*/")
+        if isinstance(elem.text, str):
+            lines = elem.text.splitlines()
+        elif isinstance(elem.text, list):
+            lines = elem.text
+        else:
+            raise TypeError("Unsupported type", str(type(elem.text)))
+        if elem.width == 0:
+            self._format_block_comment(lines, False, 1, "")
+        else:
+            self._format_block_comment(lines, True, elem.width, elem.line_start)
         self.last_element = ElementType.COMMENT
+
+    def _format_block_comment(self, lines: list[str], wrap_text: bool, width: int, line_start: str) -> None:
+        self._write(f"/{'*'*width}")
+        if wrap_text:
+            self._eol()
+            for line in lines:
+                self._write_line(line_start + line)
+            self._write_line(f"{'*'*(width+1)}/")
+        else:
+            for line in lines[:-1]:
+                self._write_line(line_start + line)
+            self._write(lines[-1] + f"{'*'*width}/")
 
     def _write_include_directive(self, elem: core.IncludeDirective) -> None:
         if elem.system:
@@ -400,7 +456,6 @@ class Writer(Formatter):
         else:
             self._write_expression(elem.parts[0])
         self._write(";")
-        self._eol()
         self.last_element = ElementType.STATEMENT
 
     def _write_expression(self, elem: Any) -> None:
