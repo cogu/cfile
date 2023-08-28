@@ -149,6 +149,17 @@ class CFactory:
         """
         return core.Variable(name, data_type, const, pointer, extern, static, array)
 
+    def typedef(self,
+                name: str,
+                data_type: str | core.Type,
+                const: bool = False,    # Only used as pointer qualifier
+                pointer: bool = False,
+                array: int | None = None) -> None:
+        """
+        New typedef
+        """
+        return core.TypeDef(name, data_type, const, pointer, array)
+
     def statement(self, expression: Any) -> core.Statement:
         """
         New statement
