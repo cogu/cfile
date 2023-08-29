@@ -76,7 +76,7 @@ For currently supported style options see class StyleOptions in cfile.style modu
 
 ## Changelog
 
-See [Changelog document](https://github.com/cogu/cfile/CHANGELOG.md).
+See [Changelog document](CHANGELOG.md).
 
 ## About versions
 
