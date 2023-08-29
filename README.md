@@ -31,7 +31,7 @@ print(writer.write_str(code))
    }
 ```
 
-Same example again but we ser some formatting style options:
+Same code example but with slighty modified formatting style:
 
 - Opening brace on same line
 - Pointer alignment to the right
@@ -66,4 +66,22 @@ print(writer.write_str(code))
 
 ## Requires
 
-Python 3.10+
+Python 3.10+ (Needed for modern type hinting support).
+
+## Documentation
+
+Documentation for v0.3 will be written at a later date.
+
+For currently supported style options see class StyleOptions in cfile.style module.
+
+## Changelog
+
+See [Changelog document](https://github.com/cogu/cfile/CHANGELOG.md).
+
+## About versions
+
+**v0.2:** No longer maintained.
+
+**v0.3:** Active development track. Code base is completely rewritten since v0.2.
+
+**v0.4:** Once v0.3 is stable enough it will be released to Pypi as v0.4.
