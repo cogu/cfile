@@ -5,7 +5,6 @@ name: Python package
 
 on:
   push:
-    branches: [ "refactor_0.3" ]
   pull_request:
     branches: [ "master" ]
 
