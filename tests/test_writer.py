@@ -343,7 +343,7 @@ class TestFunction(unittest.TestCase):
         self.assertEqual(output, "void my_func(int arg1)")
 
     def test_void_int_arg_manual(self):
-        element = core.Function("my_func", "void").add_param(core.Variable("arg1", "int"))
+        element = core.Function("my_func", "void").append(core.Variable("arg1", "int"))
         writer = cfile.Writer(cfile.StyleOptions())
         output = writer.write_str_elem(element)
         self.assertEqual(output, "void my_func(int arg1)")
@@ -622,25 +622,24 @@ class TestStructDeclaration(unittest.TestCase):
     def test_zero_sized_struct(self):
         element = core.Struct("MyStruct")
         writer = cfile.Writer(cfile.StyleOptions())
-        output = writer.write_str_elem(element)
         expected = """struct MyStruct
 {
 }"""
-        self.assertEqual(expected, output)
+        self.assertEqual(expected, writer.write_str_elem(element))
 
     def test_struct_with_int_member(self):
         element = core.Struct("MyStruct", members=core.StructMember("first", "int"))
         writer = cfile.Writer(cfile.StyleOptions())
-        output = writer.write_str_elem(element)
         expected = """struct MyStruct
 {
     int first;
 }"""
-        self.assertEqual(expected, output)
+        self.assertEqual(expected, writer.write_str_elem(element))
 
     def test_typedef_struct_statement(self):
-        struct = core.Struct("Struct_IntPair", members=[core.StructMember("first", "int"),
-                                                        core.StructMember("second", "int")])
+        struct = core.Struct("Struct_IntPair",
+                             members=[core.StructMember("first", "int"),
+                                      core.StructMember("second", "int")])
         statement = core.Statement(core.TypeDef("IntPair_T", struct))
         writer = cfile.Writer(cfile.StyleOptions())
         output = writer.write_str_elem(statement)
@@ -649,8 +648,55 @@ class TestStructDeclaration(unittest.TestCase):
     int first;
     int second;
 } IntPair_T;"""
-
         self.assertEqual(expected, output)
+
+    def test_struct_declaration_with_struct_ref_member(self):
+        struct = core.Struct("os_alarm_cfg_tag",
+                             members=[core.StructMember("taskPtr", core.StructRef("os_task_tag", pointer=True)),
+                                      core.StructMember("eventMask", "uint32_t"),
+                                      core.StructMember("initDelayMs", "uint32_t"),
+                                      core.StructMember("periodMs", "uint32_t")])
+        statement = core.Statement(core.TypeDef("os_alarm_cfg_t", struct))
+        writer = cfile.Writer(cfile.StyleOptions())
+        expected = """typedef struct os_alarm_cfg_tag
+{
+    struct os_task_tag* taskPtr;
+    uint32_t eventMask;
+    uint32_t initDelayMs;
+    uint32_t periodMs;
+} os_alarm_cfg_t;"""
+        self.assertEqual(expected, writer.write_str_elem(statement))
+
+
+class TestStructRef(unittest.TestCase):
+
+    def test_struct_variable(self):
+        element = core.Variable("time", core.StructRef("timespec"))
+        writer = cfile.Writer(cfile.StyleOptions())
+        self.assertEqual('struct timespec time', writer.write_str_elem(element))
+
+    def test_struct_parameter(self):
+        element = core.Function("process_time", "void", parameters=[core.Variable("time", core.StructRef("timespec"))])
+        writer = cfile.Writer(cfile.StyleOptions())
+        self.assertEqual('void process_time(struct timespec time)', writer.write_str_elem(element))
+
+    def test_struct_return_and_struct_parameter(self):
+        element = core.Function("timespec_add",
+                                core.StructRef("timespec"),
+                                static=True,
+                                parameters=[core.Variable("time1", core.StructRef("timespec")),
+                                            core.Variable("time2", core.StructRef("timespec"))])
+        writer = cfile.Writer(cfile.StyleOptions())
+        output = writer.write_str_elem(element)
+        self.assertEqual('static struct timespec timespec_add(struct timespec time1, struct timespec time2)', output)
+
+    def test_struct_forward_declaration(self):
+        """
+        Forward declaration of struct as a separate statement
+        """
+        element = core.Statement(core.StructRef("os_task_tag"))
+        writer = cfile.Writer(cfile.StyleOptions())
+        self.assertEqual('struct os_task_tag;', writer.write_str_elem(element))
 
 
 if __name__ == '__main__':
