@@ -160,13 +160,75 @@ class Type(Element):
             raise KeyError(name)
 
 
+class StructMember(Element):
+    """
+    Struct element. This is similar to Variable
+    but doesn't support type qualifier such as static
+    or extern
+    """
+    def __init__(self,
+                 name: str,
+                 data_type: Union[str, Type, "Struct"],
+                 const: bool = False,    # Pointer qualifier only
+                 pointer: bool = False,
+                 array: int | None = None) -> None:
+        self.name = name
+        self.const = const
+        self.pointer = pointer
+        self.array = array
+        if isinstance(data_type, Type):
+            self.data_type = data_type
+        elif isinstance(data_type, str):
+            self.data_type = Type(data_type)
+        else:
+            raise TypeError(str(type(data_type)))
+
+
+class Struct(Element):
+    """
+    A struct definition
+    """
+    def __init__(self, name: str, members: StructMember | list[StructMember] | None = None) -> None:
+        self.name = name
+        self.members: list[StructMember] = []
+        if members is not None:
+            if isinstance(members, StructMember):
+                self.append(members)
+            elif isinstance(members, list):
+                for member in members:
+                    self.append(member)
+            else:
+                raise TypeError('Invalid argument type for "elements"')
+
+    def append(self, member: StructMember) -> None:
+        """
+        Appends new element to the struct definition
+        """
+        if not isinstance(member, StructMember):
+            raise TypeError(f'Invalid type, expected "StructMember", got {str(type(member))}')
+        self.members.append(member)
+
+    def make_member(self,
+                    name: str,
+                    data_type: str | Type,
+                    const: bool = False,  # Pointer qualifier only
+                    pointer: bool = False,
+                    array: int | None = None) -> StructMember:
+        """
+        Creates a new StructMember and appends it to the list of elements
+        """
+        member = StructMember(name, data_type, const, pointer, array)
+        self.members.append(member)
+        return member
+
+
 class Variable(Element):
     """
     Variable declaration
     """
     def __init__(self,
                  name: str,
-                 data_type: str | Type,
+                 data_type: str | Type | Struct,
                  const: bool = False,    # Only used as pointer qualifier
                  pointer: bool = False,
                  extern: bool = False,
@@ -178,7 +240,7 @@ class Variable(Element):
         self.extern = extern
         self.static = static
         self.array = array
-        if isinstance(data_type, Type):
+        if isinstance(data_type, (Type, Struct)):
             self.data_type = data_type
         elif isinstance(data_type, str):
             self.data_type = Type(data_type)
@@ -208,7 +270,7 @@ class TypeDef(Element):
     """
     def __init__(self,
                  name: str,
-                 data_type: str | Type,
+                 data_type: str | Type | Struct,
                  const: bool = False,    # Only used as pointer qualifier
                  pointer: bool = False,
                  array: int | None = None) -> None:
@@ -216,7 +278,7 @@ class TypeDef(Element):
         self.const = const
         self.pointer = pointer
         self.array = array
-        if isinstance(data_type, Type):
+        if isinstance(data_type, (Type, Struct)):
             self.data_type = data_type
         elif isinstance(data_type, str):
             self.data_type = Type(data_type)

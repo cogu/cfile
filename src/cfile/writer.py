@@ -23,6 +23,7 @@ class ElementType(Enum):
     BLOCK_START = 7
     BLOCK_END = 8
     TYPEDEF = 9
+    STRUCT = 10
 
 
 class Formatter:
@@ -116,6 +117,7 @@ class Writer(Formatter):
             "IfndefDirective": self._write_ifndef_directive,
             "EndifDirective": self._write_endif_directive,
             "Extern": self._write_extern,
+            "Struct": self._write_struct,
         }
         self.last_element = ElementType.NONE
 
@@ -180,6 +182,7 @@ class Writer(Formatter):
                 self._start_line()
                 self._write_line_element(elem)
             else:
+                self._start_line()
                 class_name = elem.__class__.__name__
                 write_method = self.switcher_all.get(class_name, None)
                 if write_method is not None:
@@ -350,7 +353,12 @@ class Writer(Formatter):
         Writes typedef
         """
         self._write("typedef ")
-        self._write_type(elem.data_type)
+        if isinstance(elem.data_type, core.Type):
+            self._write_type(elem.data_type)
+        elif isinstance(elem.data_type, core.Struct):
+            self._write_struct(elem.data_type)
+        else:
+            raise NotImplementedError(elem.data_type)
         result = ""
         if elem.pointer:
             if elem.const:
@@ -369,7 +377,7 @@ class Writer(Formatter):
                 if self.style.pointer_alignment == c_style.Alignment.LEFT:
                     result += "* "
                 elif self.style.pointer_alignment == c_style.Alignment.RIGHT:
-                    if elem.data_type.pointer:
+                    if isinstance(elem.data_type, core.Type) and elem.data_type.pointer:
                         result += "*"
                     else:
                         result += " *"
@@ -378,7 +386,8 @@ class Writer(Formatter):
                 else:
                     raise ValueError(self.style.pointer_alignment)
         else:
-            if not (elem.data_type.pointer and self.style.pointer_alignment == c_style.Alignment.RIGHT):
+            if not ((isinstance(elem.data_type, core.Type) and elem.data_type.pointer) and (
+                    self.style.pointer_alignment == c_style.Alignment.RIGHT)):
                 result += " "
         result += elem.name
         if elem.array is not None:
@@ -482,6 +491,71 @@ class Writer(Formatter):
                 self._write(", ")
             self._write_expression(arg)
         self._write(")")
+
+    def _write_struct(self, elem: core.Struct) -> None:
+        """
+        Writes variable declaration
+        """
+        self._write(f"struct {elem.name}")
+        if self.style.brace_wrapping.after_struct:
+            self._eol()
+            self._start_line()
+            self._write("{")
+            self._eol()
+        else:
+            self._write(" {")
+            self._eol()
+        if len(elem.members):
+            self._indent()
+        for member in elem.members:
+            self._start_line()
+            self._write_struct_member(member)
+            self._write(";")
+            self._eol()
+        if len(elem.members):
+            self._dedent()
+        self._start_line()
+        self._write("}")
+        self.last_element = ElementType.STRUCT
+
+    def _write_struct_member(self, elem: core.StructMember) -> None:
+        """
+        Writes struct member
+        """
+        self._write_type(elem.data_type)
+        result = ""
+        if elem.pointer:
+            if elem.const:
+                if self.style.space_around_pointer_qualifiers == c_style.SpaceLocation.DEFAULT:
+                    if self.style.pointer_alignment == c_style.Alignment.LEFT:
+                        result += "* const "
+                    elif self.style.pointer_alignment == c_style.Alignment.RIGHT:
+                        result += "*const "
+                    elif self.style.pointer_alignment == c_style.Alignment.MIDDLE:
+                        result += " * const "
+                    else:
+                        raise ValueError(self.style.pointer_alignment)
+                else:
+                    raise NotImplementedError("Only default space location supported for pointer qualifiers")
+            else:
+                if self.style.pointer_alignment == c_style.Alignment.LEFT:
+                    result += "* "
+                elif self.style.pointer_alignment == c_style.Alignment.RIGHT:
+                    if elem.data_type.pointer:
+                        result += "*"
+                    else:
+                        result += " *"
+                elif self.style.pointer_alignment == c_style.Alignment.MIDDLE:
+                    result += " * "
+                else:
+                    raise ValueError(self.style.pointer_alignment)
+        else:
+            if not (elem.data_type.pointer and self.style.pointer_alignment == c_style.Alignment.RIGHT):
+                result += " "
+        result += elem.name
+        if elem.array is not None:
+            result += f"[{elem.array}]"
+        self._write(result)
 
 # Preprocessor directives
 

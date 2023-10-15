@@ -86,7 +86,11 @@ _default_storage_class_order = ['static', 'extern', 'object']
 
 class StyleOptions:
     """
-    Format style selection
+    Format style options
+
+    Default format style:
+    * Indentation: 4 spaces
+    * Always break for spaces (ALLMAN style)
     """
     def __init__(self,
                  break_before_braces: BreakBeforeBraces = BreakBeforeBraces.ALLMAN,
