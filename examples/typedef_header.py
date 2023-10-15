@@ -18,9 +18,14 @@ code.append(C.endif(adjust=1))
 code.append(C.blank())
 code.append(C.sysinclude("stdint.h"))
 code.append(C.blank())
-struct = C.struct("heap_tag", members=[C.struct_member("pItem", "void", pointer=True),
-                                       C.struct_member("u32Value", "uint32_t")])
-code.append(C.statement(C.typedef("heap_t", struct)))
+code.append([C.statement(C.struct_ref("os_task_tag")), C.line_comment("Forward declaration")])
+code.append(C.blank())
+struct = C.struct("os_alarm_cfg_tag",
+                  members=[C.struct_member("taskPtr", C.struct_ref("os_task_tag", pointer=True)),
+                           C.struct_member("eventMask", "uint32_t"),
+                           C.struct_member("initDelayMs", "uint32_t"),
+                           C.struct_member("periodMs", "uint32_t")])
+code.append(C.statement(C.typedef("os_alarm_cfg_t", struct)))
 code.append(C.blank())
 code.append(C.ifndef("__cplusplus"))
 code.append(C.line("}"))

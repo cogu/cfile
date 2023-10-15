@@ -156,6 +156,17 @@ class CFactory:
         """
         return core.Struct(name, members)
 
+    def struct_ref(self,
+                   name: str,
+                   const: bool = False,
+                   pointer: bool = False,
+                   volatile: bool = False,
+                   array: int | None = None) -> core.StructRef:
+        """
+        New struct reference
+        """
+        return core.StructRef(name, const, pointer, volatile, array)
+
     def variable(self,
                  name: str,
                  data_type: str | core.Type | core.Struct,

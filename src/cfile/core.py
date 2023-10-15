@@ -222,13 +222,19 @@ class Struct(Element):
         return member
 
 
+class StructRef(Type):
+    """
+    Reference to struct type
+    """
+
+
 class Variable(Element):
     """
     Variable declaration
     """
     def __init__(self,
                  name: str,
-                 data_type: str | Type | Struct,
+                 data_type: str | Type | Struct | StructRef,
                  const: bool = False,    # Only used as pointer qualifier
                  pointer: bool = False,
                  extern: bool = False,
@@ -270,7 +276,7 @@ class TypeDef(Element):
     """
     def __init__(self,
                  name: str,
-                 data_type: str | Type | Struct,
+                 data_type: str | Type | Struct | StructRef,
                  const: bool = False,    # Only used as pointer qualifier
                  pointer: bool = False,
                  array: int | None = None) -> None:
@@ -278,7 +284,7 @@ class TypeDef(Element):
         self.const = const
         self.pointer = pointer
         self.array = array
-        if isinstance(data_type, (Type, Struct)):
+        if isinstance(data_type, (StructRef, Struct, Type)):
             self.data_type = data_type
         elif isinstance(data_type, str):
             self.data_type = Type(data_type)
@@ -303,11 +309,12 @@ class Function(Element):
                  name: str,
                  return_type: str | Type | None = None,
                  static: bool = False,
-                 const: bool = False,  # This is not const of the return type
-                 extern: bool = False) -> None:
+                 const: bool = False,  # const function (as seen in C++)
+                 extern: bool = False,
+                 parameters: Variable | list[Variable] | None = None) -> None:
         self.name = name
         self.static = static
-        self.const = const   # Const function (as seen in C++)
+        self.const = const
         self.extern = extern
         if isinstance(return_type, Type):
             self.return_type = return_type
@@ -318,10 +325,16 @@ class Function(Element):
         else:
             raise TypeError(str(type(return_type)))
         self.params: list[Variable] = []
+        if parameters is not None:
+            if isinstance(parameters, Variable):
+                self.append(parameters)
+            elif isinstance(parameters, list):
+                for parameter in parameters:
+                    self.append(parameter)
 
-    def add_param(self, param: Variable) -> "Function":
+    def append(self, param: Variable) -> "Function":
         """
-        Add function parameter
+        Adds new function parameter
         """
         if not isinstance(param, (Variable)):
             raise TypeError("Expected Variable or FunctionPtr object")
@@ -338,7 +351,7 @@ class Function(Element):
         Creates new Variable from arguments and adds as parameter
         """
         param = Variable(name, data_type, const=const, pointer=pointer, array=array)
-        return self.add_param(param)
+        return self.append(param)
 
 
 class FunctionCall(Element):

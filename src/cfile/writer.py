@@ -118,6 +118,7 @@ class Writer(Formatter):
             "EndifDirective": self._write_endif_directive,
             "Extern": self._write_extern,
             "Struct": self._write_struct,
+            "StructRef": self._write_type,
         }
         self.last_element = ElementType.NONE
 
@@ -262,7 +263,7 @@ class Writer(Formatter):
                 self._write_line(line_start + line)
             self._write(lines[-1] + f"{'*'*width}/")
 
-    def _write_type(self, elem: core.Type) -> None:
+    def _write_type(self, elem: core.Type | core.StructRef) -> None:
         """
         Writes data type
         """
@@ -287,14 +288,17 @@ class Writer(Formatter):
                 raise RuntimeError(f"Used qualifier '{key}' not part of selected qualifier_order list")
         return " ".join(parts)
 
-    def _format_type_part(self, elem: core.Type) -> str:
+    def _format_type_part(self, elem: core.Type | core.StructRef) -> str:
         """
         Writes type name and pointer
         """
+        result = ""
+        if isinstance(elem, core.StructRef):
+            result += "struct "
         if isinstance(elem.base_type, str):
-            result = elem.base_type
+            result += elem.base_type
         else:
-            result = self._format_type(elem.base_type)
+            result += self._format_type(elem.base_type)
         if elem.pointer:
             if self.style.pointer_alignment == c_style.Alignment.LEFT:
                 result += "*"
