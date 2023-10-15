@@ -52,7 +52,7 @@ Line 4 """
 Line 2
 Line 3
 Line 4 */"""
-        self.assertEqual(output, expected)
+        self.assertEqual(expected, output)
 
     def test_block_comment_with_user_defined_width_and_line_start__str_input(self):
         comment = """Line 1
@@ -68,7 +68,7 @@ Line 4"""
 * Line 3
 * Line 4
 ***********/"""
-        self.assertEqual(output, expected)
+        self.assertEqual(expected, output)
 
     def test_block_comment_with_user_defined_width_and_line_start__list_input(self):
         comment = ["Line 1", "Line 2", "Line 3", "Line 4"]
@@ -82,7 +82,7 @@ Line 4"""
 * Line 4
 ***********/
 """
-        self.assertEqual(output, expected)
+        self.assertEqual(expected, output)
 
 
 class TestPreprocessor(unittest.TestCase):
@@ -389,7 +389,7 @@ class TestSequence(unittest.TestCase):
         writer = cfile.Writer(cfile.StyleOptions())
         output = writer.write_str(seq)
         expected = "static int a;\n" + "static void* b;\n"
-        self.assertEqual(output, expected)
+        self.assertEqual(expected, output)
 
     def test_statement_and_comment_using_line_element(self):
         seq = core.Sequence()
@@ -397,7 +397,7 @@ class TestSequence(unittest.TestCase):
         writer = cfile.Writer(cfile.StyleOptions())
         output = writer.write_str(seq)
         expected = "int a; /* Comment */\n"
-        self.assertEqual(output, expected)
+        self.assertEqual(expected, output)
 
     def test_statement_and_comment_using_python_list(self):
         seq = core.Sequence()
@@ -405,7 +405,7 @@ class TestSequence(unittest.TestCase):
         writer = cfile.Writer(cfile.StyleOptions())
         output = writer.write_str(seq)
         expected = "int a; /* Comment */\n"
-        self.assertEqual(output, expected)
+        self.assertEqual(expected, output)
 
 
 class TestBlock(unittest.TestCase):
@@ -417,7 +417,7 @@ class TestBlock(unittest.TestCase):
         writer = cfile.Writer(cfile.StyleOptions(break_before_braces=style.BreakBeforeBraces.ALLMAN))
         output = writer.write_str(seq)
         expected = "\n".join(["void f(void)", "{", "}", ""])
-        self.assertEqual(output, expected)
+        self.assertEqual(expected, output)
 
     def test_attach_brace_to_function(self):
         seq = core.Sequence()
@@ -426,7 +426,7 @@ class TestBlock(unittest.TestCase):
         writer = cfile.Writer(cfile.StyleOptions(break_before_braces=style.BreakBeforeBraces.ATTACH))
         output = writer.write_str(seq)
         expected = "\n".join(["void f(void) {", "}", ""])
-        self.assertEqual(output, expected)
+        self.assertEqual(expected, output)
 
     def test_variable_declarations(self):
         block = core.Block()
@@ -436,7 +436,7 @@ class TestBlock(unittest.TestCase):
         writer = cfile.Writer(cfile.StyleOptions())
         expected = "\n".join(["{", "    int a;", "    int b;", "    int c;", "}"])
         output = writer.write_str_elem(block)
-        self.assertEqual(output, expected)
+        self.assertEqual(expected, output)
 
     def test_function_definition(self):
         seq = core.Sequence()
@@ -447,11 +447,30 @@ class TestBlock(unittest.TestCase):
         allman_writer = cfile.Writer(cfile.StyleOptions(break_before_braces=style.BreakBeforeBraces.ALLMAN))
         output = allman_writer.write_str(seq)
         expected = "\n".join(["int add(int a, int b)", "{", "    return a + b;", "}", ""])
-        self.assertEqual(output, expected)
+        self.assertEqual(expected, output)
         attach_writer = cfile.Writer(cfile.StyleOptions(break_before_braces=style.BreakBeforeBraces.ATTACH))
         output = attach_writer.write_str(seq)
         expected = "\n".join(["int add(int a, int b) {", "    return a + b;", "}", ""])
-        self.assertEqual(output, expected)
+        self.assertEqual(expected, output)
+
+    def test_struct_declaration_inside_block(self):
+        outer = core.Sequence()
+        inner = core.Block()
+        outer.append(inner)
+        struct = core.Struct("IntPair", members=[core.StructMember("first", "int"),
+                                                 core.StructMember("second", "int")])
+        inner.append(core.Statement(struct))
+        allman_writer = cfile.Writer(cfile.StyleOptions(break_before_braces=style.BreakBeforeBraces.ALLMAN))
+        output = allman_writer.write_str(outer)
+        expected = """{
+    struct IntPair
+    {
+        int first;
+        int second;
+    };
+}
+"""
+        self.assertEqual(expected, output)
 
 
 class TestStringLiteral(unittest.TestCase):
@@ -595,7 +614,43 @@ extern "C"
 }
 #endif // __clpusplus
 """
-        self.assertEqual(output, expected)
+        self.assertEqual(expected, output)
+
+
+class TestStructDeclaration(unittest.TestCase):
+
+    def test_zero_sized_struct(self):
+        element = core.Struct("MyStruct")
+        writer = cfile.Writer(cfile.StyleOptions())
+        output = writer.write_str_elem(element)
+        expected = """struct MyStruct
+{
+}"""
+        self.assertEqual(expected, output)
+
+    def test_struct_with_int_member(self):
+        element = core.Struct("MyStruct", members=core.StructMember("first", "int"))
+        writer = cfile.Writer(cfile.StyleOptions())
+        output = writer.write_str_elem(element)
+        expected = """struct MyStruct
+{
+    int first;
+}"""
+        self.assertEqual(expected, output)
+
+    def test_typedef_struct_statement(self):
+        struct = core.Struct("Struct_IntPair", members=[core.StructMember("first", "int"),
+                                                        core.StructMember("second", "int")])
+        statement = core.Statement(core.TypeDef("IntPair_T", struct))
+        writer = cfile.Writer(cfile.StyleOptions())
+        output = writer.write_str_elem(statement)
+        expected = """typedef struct Struct_IntPair
+{
+    int first;
+    int second;
+} IntPair_T;"""
+
+        self.assertEqual(expected, output)
 
 
 if __name__ == '__main__':

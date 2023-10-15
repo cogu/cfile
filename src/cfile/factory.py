@@ -116,7 +116,7 @@ class CFactory:
 
     def function(self,
                  name: str,
-                 return_type: str | core.Type | None = None,
+                 return_type: str | core.Type | core.Struct | None = None,
                  static: bool = False,
                  const: bool = False,  # This is not const of the return type
                  extern: bool = False) -> core.Function:
@@ -126,7 +126,7 @@ class CFactory:
         return core.Function(name, return_type, static, const, extern)
 
     def type(self,
-             type_ref: str | core.Type,
+             type_ref: str | core.Type | core.Struct,
              const: bool = False,
              pointer: bool = False,
              volatile: bool = False,
@@ -136,9 +136,29 @@ class CFactory:
         """
         return core.Type(type_ref, const, pointer, volatile, array)
 
+    def struct_member(self,
+                      name: str,
+                      data_type: str | core.Type | core.Struct,
+                      const: bool = False,  # Pointer qualifier only
+                      pointer: bool = False,
+                      array: int | None = None) -> core.StructMember:
+        """
+        New StructMember
+        """
+        return core.StructMember(name, data_type, const, pointer, array)
+
+    def struct(self,
+               name: str,
+               members: core.StructMember | list[core.StructMember] | None = None
+               ) -> core.Variable:
+        """
+        New Struct
+        """
+        return core.Struct(name, members)
+
     def variable(self,
                  name: str,
-                 data_type: str | core.Type,
+                 data_type: str | core.Type | core.Struct,
                  const: bool = False,    # Only used as pointer qualifier
                  pointer: bool = False,
                  extern: bool = False,
@@ -151,7 +171,7 @@ class CFactory:
 
     def typedef(self,
                 name: str,
-                data_type: str | core.Type,
+                data_type: str | core.Type | core.Struct,
                 const: bool = False,    # Only used as pointer qualifier
                 pointer: bool = False,
                 array: int | None = None) -> None:
