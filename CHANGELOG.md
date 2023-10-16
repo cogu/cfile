@@ -2,6 +2,10 @@
 
 Notable changes.
 
+## [v0.3.1]
+
+* Support struct declaratios and struct references
+
 ## [v0.3.0]
 
 * New code base
