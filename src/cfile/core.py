@@ -75,7 +75,7 @@ class Comment(Element):
     Comment base
     adjust: Adds spaces before comment begins to allow right-adjustment
     """
-    def __init__(self, text: str, adjust: int = 1) -> None:
+    def __init__(self, text: str | list[str], adjust: int = 1) -> None:
         self.text = text
         self.adjust = adjust
 
@@ -132,7 +132,15 @@ class Line(Element):
             raise TypeError("Invalid type:" + str(type(parts)))
 
 
-class Type(Element):
+class DataType(Element):
+    """
+    Base class for all data types
+    """
+    def __init__(self, name: str | None) -> None:
+        self.name = name
+
+
+class Type(DataType):
     """
     Data type
     """
@@ -142,6 +150,7 @@ class Type(Element):
                  pointer: bool = False,
                  volatile: bool = False,
                  array: int | None = None) -> None:  # Only used for typedefs to other array types
+        super().__init__(None)
         self.base_type = base_type
         self.const = const
         self.volatile = volatile
@@ -168,7 +177,7 @@ class StructMember(Element):
     """
     def __init__(self,
                  name: str,
-                 data_type: Union[str, Type, "Struct"],
+                 data_type: DataType | str,
                  const: bool = False,    # Pointer qualifier only
                  pointer: bool = False,
                  array: int | None = None) -> None:
@@ -176,7 +185,7 @@ class StructMember(Element):
         self.const = const
         self.pointer = pointer
         self.array = array
-        if isinstance(data_type, Type):
+        if isinstance(data_type, DataType):
             self.data_type = data_type
         elif isinstance(data_type, str):
             self.data_type = Type(data_type)
@@ -184,12 +193,12 @@ class StructMember(Element):
             raise TypeError(str(type(data_type)))
 
 
-class Struct(Element):
+class Struct(DataType):
     """
     A struct definition
     """
-    def __init__(self, name: str, members: StructMember | list[StructMember] | None = None) -> None:
-        self.name = name
+    def __init__(self, name: str | None, members: StructMember | list[StructMember] | None = None) -> None:
+        super().__init__(name)
         self.members: list[StructMember] = []
         if members is not None:
             if isinstance(members, StructMember):
@@ -222,10 +231,46 @@ class Struct(Element):
         return member
 
 
-class StructRef(Type):
+class TypeDef(DataType):
     """
-    Reference to struct type
+    Type definition (typedef)
     """
+    def __init__(self,
+                 name: str,
+                 base_type: Union[str, "DataType", "Declaration"],
+                 const: bool = False,
+                 pointer: bool = False,
+                 volatile: bool = False,
+                 array: int | None = None) -> None:
+        super().__init__(name)
+        self.const = const
+        self.volatile = volatile
+        self.pointer = pointer
+        self.array = array
+        self.base_type: DataType | Declaration
+        if isinstance(base_type, DataType):
+            self.base_type = base_type
+        elif isinstance(base_type, str):
+            self.base_type = Type(base_type)
+        elif isinstance(base_type, Declaration):
+            if not isinstance(base_type.element, DataType):
+                err_msg = f'base_type: Declaration must declare a type, not {str(type(base_type.element))}'
+            self.base_type = base_type
+        else:
+            err_msg = 'base_type: Invalid type, expected "str" | "DataType" | "Declaration",'
+            err_msg += ' got {str(type(base_type))}'
+            raise TypeError(err_msg)
+
+    def qualifier(self, name) -> bool:
+        """
+        Returns the status of named qualifier
+        """
+        if name == "const":
+            return self.const
+        if name == "volatile":
+            return self.volatile
+        else:
+            raise KeyError(name)
 
 
 class Variable(Element):
@@ -234,7 +279,7 @@ class Variable(Element):
     """
     def __init__(self,
                  name: str,
-                 data_type: str | Type | Struct | StructRef,
+                 data_type: str | DataType,
                  const: bool = False,    # Only used as pointer qualifier
                  pointer: bool = False,
                  extern: bool = False,
@@ -246,7 +291,7 @@ class Variable(Element):
         self.extern = extern
         self.static = static
         self.array = array
-        if isinstance(data_type, (Type, Struct)):
+        if isinstance(data_type, DataType):
             self.data_type = data_type
         elif isinstance(data_type, str):
             self.data_type = Type(data_type)
@@ -267,56 +312,22 @@ class Variable(Element):
             raise KeyError(name)
 
 
-class TypeDef(Element):
-    """
-    Type definition
-
-    A type definition is pretty much identical to a variable declaration
-    but it has the keyword "typedef" in front and lacks storage qualifiers
-    """
-    def __init__(self,
-                 name: str,
-                 data_type: str | Type | Struct | StructRef,
-                 const: bool = False,    # Only used as pointer qualifier
-                 pointer: bool = False,
-                 array: int | None = None) -> None:
-        self.name = name
-        self.const = const
-        self.pointer = pointer
-        self.array = array
-        if isinstance(data_type, (StructRef, Struct, Type)):
-            self.data_type = data_type
-        elif isinstance(data_type, str):
-            self.data_type = Type(data_type)
-        else:
-            raise TypeError(str(type(data_type)))
-
-    def qualifier(self, name) -> bool:
-        """
-        Returns the status of named qualifier
-        """
-        if name == "const":
-            return self.const  # pointer qualifier, not the same as as type qualifier
-        else:
-            raise KeyError(name)
-
-
 class Function(Element):
     """
     Function declaration
     """
     def __init__(self,
                  name: str,
-                 return_type: str | Type | None = None,
+                 return_type: str | DataType | None = None,
                  static: bool = False,
                  const: bool = False,  # const function (as seen in C++)
                  extern: bool = False,
-                 parameters: Variable | list[Variable] | None = None) -> None:
+                 params: Variable | list[Variable] | None = None) -> None:
         self.name = name
         self.static = static
         self.const = const
         self.extern = extern
-        if isinstance(return_type, Type):
+        if isinstance(return_type, DataType):
             self.return_type = return_type
         elif isinstance(return_type, str):
             self.return_type = Type(return_type)
@@ -325,12 +336,12 @@ class Function(Element):
         else:
             raise TypeError(str(type(return_type)))
         self.params: list[Variable] = []
-        if parameters is not None:
-            if isinstance(parameters, Variable):
-                self.append(parameters)
-            elif isinstance(parameters, list):
-                for parameter in parameters:
-                    self.append(parameter)
+        if params is not None:
+            if isinstance(params, Variable):
+                self.append(params)
+            elif isinstance(params, list):
+                for param in params:
+                    self.append(param)
 
     def append(self, param: Variable) -> "Function":
         """
@@ -354,19 +365,42 @@ class Function(Element):
         return self.append(param)
 
 
+class Declaration(Element):
+    """
+    A declaration element
+    Valid sub-elements:
+    - Variable
+    - DataType (including struct)
+    - Function
+    """
+    def __init__(self,
+                 element: Union[Variable, Function, DataType],
+                 init_value: Any | None = None) -> None:
+        if isinstance(element, (Variable, Function, DataType)):
+            self.element = element
+            self.init_value = None
+        else:
+            raise TypeError(f"element: Invalid type '{str(type(element))}'")
+        if init_value is not None:
+            if not isinstance(element, Variable):
+                raise ValueError("init_value only allowed for Variable declarations")
+            self.init_value = init_value
+
+
 class FunctionCall(Element):
     """
     Function call expression
     """
-    def __init__(self, name: str, *args) -> None:
+    def __init__(self, name: str, args: list[int | float | str | Element] | None = None) -> None:
         self.name = name
-        self.args = []
-        for arg in args:
-            self.add_arg(arg)
+        self.args: list[str | Element] = []
+        if args is not None:
+            for arg in args:
+                self.append(arg)
 
-    def add_arg(self, arg: str | Element) -> "FunctionCall":
+    def append(self, arg: int | float | str | Element) -> "FunctionCall":
         """
-        Add argument
+        Appends argument to function call, can be chained
         """
         if isinstance(arg, (int, float)):
             self.args.append(str(arg))
@@ -383,6 +417,7 @@ class FunctionReturn(Element):
     """
     def __init__(self,
                  expression: int | float | bool | str | Element) -> None:
+        self.expression: str | Element
         if isinstance(expression, bool):
             self.expression = "true" if expression else "false"
         elif isinstance(expression, (int, float)):
@@ -448,10 +483,10 @@ class Sequence:
     """
     A sequence of statements, comments or whitespace
     """
-    def __init__(self):
-        self.elements: Union[Comment, Statement, "Sequence"] = []
+    def __init__(self) -> None:
+        self.elements: list[Union[Comment, Statement, "Sequence"]] = []
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.elements)
 
     def append(self, elem: Any) -> "Sequence":

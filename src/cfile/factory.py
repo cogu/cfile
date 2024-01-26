@@ -2,7 +2,7 @@
 Factory classes
 """
 from collections import namedtuple
-from typing import Any
+from typing import Union, Any
 import cfile.core as core
 
 BuiltInTypes = namedtuple("BuiltInTypes", ["char",
@@ -32,7 +32,7 @@ class CFactory:
         """
         return core.Blank()
 
-    def line(self, inner: Any) -> core.Blank:
+    def line(self, inner: Any) -> core.Line:
         """
         Like statement but doesn't add ';' before new-line.
         """
@@ -108,7 +108,7 @@ class CFactory:
         """
         return core.Extern(language)
 
-    def block(self) -> core.Block():
+    def block(self) -> core.Block:
         """
         New block sequence
         """
@@ -116,17 +116,18 @@ class CFactory:
 
     def function(self,
                  name: str,
-                 return_type: str | core.Type | core.Struct | None = None,
+                 return_type: str | core.DataType | None = None,
                  static: bool = False,
                  const: bool = False,  # This is not const of the return type
-                 extern: bool = False) -> core.Function:
+                 extern: bool = False,
+                 params: core.Variable | list[core.Variable] | None = None) -> core.Function:
         """
         New function
         """
-        return core.Function(name, return_type, static, const, extern)
+        return core.Function(name, return_type, static, const, extern, params)
 
     def type(self,
-             type_ref: str | core.Type | core.Struct,
+             type_ref: str | core.Type,
              const: bool = False,
              pointer: bool = False,
              volatile: bool = False,
@@ -150,22 +151,11 @@ class CFactory:
     def struct(self,
                name: str,
                members: core.StructMember | list[core.StructMember] | None = None
-               ) -> core.Variable:
+               ) -> core.Struct:
         """
         New Struct
         """
         return core.Struct(name, members)
-
-    def struct_ref(self,
-                   name: str,
-                   const: bool = False,
-                   pointer: bool = False,
-                   volatile: bool = False,
-                   array: int | None = None) -> core.StructRef:
-        """
-        New struct reference
-        """
-        return core.StructRef(name, const, pointer, volatile, array)
 
     def variable(self,
                  name: str,
@@ -182,14 +172,15 @@ class CFactory:
 
     def typedef(self,
                 name: str,
-                data_type: str | core.Type | core.Struct,
+                base_type: str | core.DataType | core.Declaration,
                 const: bool = False,    # Only used as pointer qualifier
                 pointer: bool = False,
-                array: int | None = None) -> None:
+                volatile: bool = False,
+                array: int | None = None) -> core.TypeDef:
         """
         New typedef
         """
-        return core.TypeDef(name, data_type, const, pointer, array)
+        return core.TypeDef(name, base_type, const, pointer, volatile, array)
 
     def statement(self, expression: Any) -> core.Statement:
         """
@@ -209,14 +200,30 @@ class CFactory:
         """
         return core.StringLiteral(text)
 
-    def func_call(self, name: str, *args) -> core.FunctionCall:
+    arg_types = int | float | str | core.Element
+
+    def func_call(self,
+                  name: str,
+                  args: list[arg_types] | arg_types | None = None) -> core.FunctionCall:
         """
         New function call
         """
-        return core.FunctionCall(name, *args)
+        if args is None:
+            return core.FunctionCall(name, None)
+        elif isinstance(args, list):
+            return core.FunctionCall(name, args)
+        else:
+            return core.FunctionCall(name, [args])
 
     def func_return(self, expression: int | float | str | core.Element) -> core.FunctionReturn:
         """
         New return expression
         """
         return core.FunctionReturn(expression)
+
+    def declaration(self,
+                    element: Union[core.Variable, core.Function, core.DataType],
+                    init_value: Any | None = None) -> core.Declaration:
+
+        """New declaration"""
+        return core.Declaration(element, init_value)

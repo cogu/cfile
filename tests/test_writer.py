@@ -154,126 +154,133 @@ class TestPreprocessor(unittest.TestCase):
         self.assertEqual(output, '#    endif')
 
 
-class TestType(unittest.TestCase):
+class TestTypeDeclarations(unittest.TestCase):
     def test_basic_int(self):
-        element = core.Type("int")
+        element = core.Declaration(core.Type("int"))
         writer = cfile.Writer(cfile.StyleOptions())
         output = writer.write_str_elem(element)
         self.assertEqual(output, "int")
 
     def test_const_int(self):
-        element = core.Type("int", const=True)
+        element = core.Declaration(core.Type("int", const=True))
         writer = cfile.Writer(cfile.StyleOptions())
         output = writer.write_str_elem(element)
         self.assertEqual(output, "const int")
 
     def test_basic_int_ptr_left_align(self):
-        element = core.Type("int", pointer=True)
+        element = core.Declaration(core.Type("int", pointer=True))
         writer = cfile.Writer(
             cfile.StyleOptions(pointer_alignment=style.Alignment.LEFT))
         output = writer.write_str_elem(element)
         self.assertEqual(output, "int*")
 
     def test_basic_int_ptr_right_align(self):
-        element = core.Type("int", pointer=True)
+        element = core.Declaration(core.Type("int", pointer=True))
         writer = cfile.Writer(
             cfile.StyleOptions(pointer_alignment=style.Alignment.RIGHT))
         output = writer.write_str_elem(element)
         self.assertEqual(output, "int *")
 
     def test_basic_int_ptr_middle_align(self):
-        element = core.Type("int", pointer=True)
+        element = core.Declaration(core.Type("int", pointer=True))
         writer = cfile.Writer(
             cfile.StyleOptions(pointer_alignment=style.Alignment.MIDDLE))
         output = writer.write_str_elem(element)
-        self.assertEqual(output, "int * ")
-        # Note: Current implementation will probably not handle pointer to pointer in correct way.
-        # Using MIDDLE alignment is discouraged for now.
+        self.assertEqual(output, "int *")
 
     def test_const_int_ptr_left_align(self):
-        element = core.Type("int", const=True, pointer=True)
+        element = core.Declaration(core.Type("int", const=True, pointer=True))
         writer = cfile.Writer(
             cfile.StyleOptions(pointer_alignment=style.Alignment.LEFT))
         output = writer.write_str_elem(element)
         self.assertEqual(output, "const int*")
 
     def test_const_int_ptr_right_align(self):
-        element = core.Type("int", const=True, pointer=True)
+        element = core.Declaration(core.Type("int", const=True, pointer=True))
         writer = cfile.Writer(
             cfile.StyleOptions(pointer_alignment=style.Alignment.RIGHT))
         output = writer.write_str_elem(element)
         self.assertEqual(output, "const int *")
 
     def test_nested_ptr_to_int_ptr__left_align(self):
-        element = core.Type(core.Type("int", pointer=True), pointer=True)
+        element = core.Declaration(core.Type(core.Type("int", pointer=True), pointer=True))
         writer = cfile.Writer(
             cfile.StyleOptions(pointer_alignment=style.Alignment.LEFT))
         output = writer.write_str_elem(element)
         self.assertEqual(output, "int**")
 
 
-class TestVariable(unittest.TestCase):
+class TestVariableInstance(unittest.TestCase):
 
-    def test_type_is_python_string(self):
+    def test_writing_variable_instance_will_only_produce_its_name(self):
         element = core.Variable("value", "int")
+        writer = cfile.Writer(cfile.StyleOptions())
+        output = writer.write_str_elem(element)
+        self.assertEqual(output, "value")
+
+
+class TestVariableDeclaration(unittest.TestCase):
+
+    def test_declare_int_variable_from_string_type_name(self):
+        element = core.Declaration(core.Variable("value", "int"))
         writer = cfile.Writer(cfile.StyleOptions())
         output = writer.write_str_elem(element)
         self.assertEqual(output, "int value")
 
-    def test_type_is_int(self):
-        element = core.Variable("value", core.Type("int"))
+    def test_declare_int_variable(self):
+        element = core.Declaration(core.Variable("value", core.Type("int")))
         writer = cfile.Writer(cfile.StyleOptions())
         output = writer.write_str_elem(element)
         self.assertEqual(output, "int value")
 
     def test_type_is_const_int(self):
-        element = core.Variable("value", core.Type("int", const=True))
+        element = core.Declaration(core.Variable("value", core.Type("int", const=True)))
         writer = cfile.Writer(cfile.StyleOptions())
         output = writer.write_str_elem(element)
         self.assertEqual(output, "const int value")
 
     def test_type_is_int_ptr(self):
-        element = core.Variable("value", core.Type("int", pointer=True))
+        element = core.Declaration(core.Variable("value", core.Type("int", pointer=True)))
         writer = cfile.Writer(cfile.StyleOptions())
         output = writer.write_str_elem(element)
         self.assertEqual(output, "int* value")
 
     def test_type_is_int_ptr__right_align(self):
-        element = core.Variable("value", core.Type("int", pointer=True))
+        element = core.Declaration(core.Variable("value", core.Type("int", pointer=True)))
         writer = cfile.Writer(
             cfile.StyleOptions(pointer_alignment=style.Alignment.RIGHT))
         output = writer.write_str_elem(element)
         self.assertEqual(output, "int *value")
 
     def test_type_is_int__var_is_ptr(self):
-        element = core.Variable("value", core.Type("int"), pointer=True)
+        element = core.Declaration(core.Variable("value", core.Type("int"), pointer=True))
         writer = cfile.Writer(cfile.StyleOptions())
         output = writer.write_str_elem(element)
         self.assertEqual(output, "int* value")
 
     def test_type_is_int__var_is_ptr__right_align(self):
-        element = core.Variable("value", core.Type("int"), pointer=True)
+        element = core.Declaration(core.Variable("value", core.Type("int"), pointer=True))
         writer = cfile.Writer(
             cfile.StyleOptions(pointer_alignment=style.Alignment.RIGHT))
         output = writer.write_str_elem(element)
         self.assertEqual(output, "int *value")
 
     def test_type_is_int_ptr__var_is_ptr__left_align(self):
-        element = core.Variable("value", core.Type("int", pointer=True), pointer=True)
+        element = core.Declaration(core.Variable("value", core.Type("int", pointer=True), pointer=True))
         writer = cfile.Writer(
             cfile.StyleOptions(pointer_alignment=style.Alignment.LEFT))
         output = writer.write_str_elem(element)
         self.assertEqual(output, "int** value")
 
     def test_type_is_int_ptr__var_is_ptr__right_align(self):
-        element = core.Variable("value", core.Type("int", pointer=True), pointer=True)
+        element = core.Declaration(core.Variable("value", core.Type("int", pointer=True), pointer=True))
         writer = cfile.Writer(
             cfile.StyleOptions(pointer_alignment=style.Alignment.RIGHT))
         output = writer.write_str_elem(element)
         self.assertEqual(output, "int **value")
 
     def test_type_is_str_containing_ptr__var_is_ptr___left_align(self):
-        element = core.Variable("value", "int*", pointer=True)
+        element = core.Declaration(core.Variable("value", "int*", pointer=True))
         writer = cfile.Writer(
             cfile.StyleOptions(pointer_alignment=style.Alignment.LEFT))
         output = writer.write_str_elem(element)
@@ -282,126 +289,169 @@ class TestVariable(unittest.TestCase):
     def test_type_is_str_containing_ptr__var_is_ptr__right_align(self):
         # Manually adding '*' to the data type name is highly discouraged.
         # It causes very strange formatting.
-        element = core.Variable("value", "int*", pointer=True)
+        element = core.Declaration(core.Variable("value", "int*", pointer=True))
         writer = cfile.Writer(
             cfile.StyleOptions(pointer_alignment=style.Alignment.RIGHT))
         output = writer.write_str_elem(element)
         self.assertEqual(output, "int* *value")
 
     def test_type_is_int__var_is_const_ptr__left_align(self):
-        element = core.Variable("value", core.Type("int"), const=True, pointer=True)
+        element = core.Declaration(core.Variable("value", core.Type("int"), const=True, pointer=True))
         writer = cfile.Writer(
             cfile.StyleOptions(pointer_alignment=style.Alignment.LEFT))
         output = writer.write_str_elem(element)
         self.assertEqual(output, "int* const value")
 
     def test_type_is_const_int_ptr__var_is_const_ptr__left_align(self):
-        element = core.Variable("value", core.Type("int", const=True, pointer=True), const=True, pointer=True)
+        element = core.Declaration(core.Variable("value",
+                                                 core.Type("int", const=True, pointer=True),
+                                                 const=True,
+                                                 pointer=True))
         writer = cfile.Writer(
             cfile.StyleOptions(pointer_alignment=style.Alignment.LEFT))
         output = writer.write_str_elem(element)
         self.assertEqual(output, "const int** const value")
 
     def test_type_is_const_int_ptr__var_is_const_ptr__right_align(self):
-        element = core.Variable("value", core.Type("int", const=True, pointer=True), const=True, pointer=True)
+        element = core.Declaration(core.Variable("value",
+                                                 core.Type("int", const=True, pointer=True),
+                                                 const=True,
+                                                 pointer=True))
         writer = cfile.Writer(
             cfile.StyleOptions(pointer_alignment=style.Alignment.RIGHT))
         output = writer.write_str_elem(element)
         self.assertEqual(output, "const int **const value")
 
 
-class TestFunction(unittest.TestCase):
+class TestFunctionDeclaration(unittest.TestCase):
 
     def test_void_no_args(self):
-        element = core.Function("my_func", "void")
+        element = core.Declaration(core.Function("my_func", "void"))
         writer = cfile.Writer(cfile.StyleOptions())
         output = writer.write_str_elem(element)
         self.assertEqual(output, "void my_func(void)")
 
     def test_extern_void_no_args(self):
-        element = core.Function("my_func", "void", extern=True)
+        element = core.Declaration(core.Function("my_func", "void", extern=True))
         writer = cfile.Writer(cfile.StyleOptions())
         output = writer.write_str_elem(element)
         self.assertEqual(output, "extern void my_func(void)")
 
     def test_static_void_no_args(self):
-        element = core.Function("my_func", "void", static=True)
+        element = core.Declaration(core.Function("my_func", "void", static=True))
         writer = cfile.Writer(cfile.StyleOptions())
         output = writer.write_str_elem(element)
         self.assertEqual(output, "static void my_func(void)")
 
     def test_int_ptr_no_args(self):
-        element = core.Function("my_func", core.Type("int", pointer=True))
+        element = core.Declaration(core.Function("my_func", core.Type("int", pointer=True)))
         writer = cfile.Writer(cfile.StyleOptions())
         output = writer.write_str_elem(element)
         self.assertEqual(output, "int* my_func(void)")
 
-    def test_void_int_arg_using_make(self):
-        element = core.Function("my_func", "void").make_param("arg1", "int")
+    def test_void_int_arg_using_make_param(self):
+        element = core.Declaration(core.Function("my_func", "void").make_param("arg1", "int"))
         writer = cfile.Writer(cfile.StyleOptions())
         output = writer.write_str_elem(element)
         self.assertEqual(output, "void my_func(int arg1)")
 
-    def test_void_int_arg_manual(self):
-        element = core.Function("my_func", "void").append(core.Variable("arg1", "int"))
+    def test_void_int_arg_using_append(self):
+        element = core.Declaration(core.Function("my_func", "void").append(core.Variable("arg1", "int")))
+        writer = cfile.Writer(cfile.StyleOptions())
+        output = writer.write_str_elem(element)
+        self.assertEqual(output, "void my_func(int arg1)")
+
+    def test_void_int_arg_using_params_arg(self):
+        element = core.Declaration(core.Function("my_func", "void", params=[core.Variable("arg1", "int")]))
         writer = cfile.Writer(cfile.StyleOptions())
         output = writer.write_str_elem(element)
         self.assertEqual(output, "void my_func(int arg1)")
 
     def test_int_func_with_int_arg_and_char_double_ptr_arg(self):
-        element = core.Function("main", "int")
-        element.make_param("argc", "int").make_param("argv", core.Type(core.Type("char", pointer=True), pointer=True))
+        func = core.Function("main", "int")
+        func.make_param("argc", "int").make_param("argv", core.Type(core.Type("char", pointer=True), pointer=True))
+        writer = cfile.Writer(cfile.StyleOptions())
+        output = writer.write_str_elem(core.Declaration(func))
+        self.assertEqual(output, "int main(int argc, char** argv)")
+
+
+class TestAssignment(unittest.TestCase):
+
+    def test_assign_var(self):
+        a_var = core.Variable("a", "int")
+        element = core.Assignment(a_var, 0)
         writer = cfile.Writer(cfile.StyleOptions())
         output = writer.write_str_elem(element)
-        self.assertEqual(output, "int main(int argc, char** argv)")
+        self.assertEqual(output, "a = 0")
 
 
 class TestStatement(unittest.TestCase):
 
-    def test_variable_declaration(self):
-        element = core.Statement(core.Variable("a", "int"))
+    def test_int_variable_declaration(self):
+        element = core.Statement(core.Declaration(core.Variable("a", "int")))
         writer = cfile.Writer(cfile.StyleOptions())
         output = writer.write_str_elem(element)
         self.assertEqual(output, "int a;")
 
-    def test_variable_declaration_with_initializer(self):
-        element = core.Statement([core.Variable("a", "int"), "=", 0])
+    def test_int_variable_declaration_with_initializer(self):
+        element = core.Statement(core.Declaration(core.Variable("a", "int"), 0))
         writer = cfile.Writer(cfile.StyleOptions())
-        output = writer.write_str_elem(element)
-        self.assertEqual(output, "int a = 0;")
-        element = core.Statement([core.Variable("a", "int"), "=", "0"])
         output = writer.write_str_elem(element)
         self.assertEqual(output, "int a = 0;")
 
-    def variable_declaration_using_assignment(self):
-        element = core.Statement(core.Assignment(core.Variable("a", "int"), "0"))
+    def test_struct_ref_variable_declaration(self):
+        struct_type = core.Struct("record_t")
+        element = core.Statement(core.Declaration(core.Variable("a", struct_type)))
         writer = cfile.Writer(cfile.StyleOptions())
         output = writer.write_str_elem(element)
-        self.assertEqual(output, "int a = 0;")
+        self.assertEqual(output, "struct record_t a;")
+
+    def test_struct_with_int_initializer(self):
+        struct_type = core.Struct("record_t")
+        element = core.Statement(core.Declaration(core.Variable("a", struct_type), [0, 0]))
+        writer = cfile.Writer(cfile.StyleOptions())
+        output = writer.write_str_elem(element)
+        self.assertEqual(output, "struct record_t a = {0, 0};")
+
+    def test_struct_ref_with_int_initializer(self):
+        struct_type = core.Struct("record_tag")
+        typedef = core.TypeDef("record_t", struct_type)
+        element = core.Statement(core.Declaration(core.Variable("a", typedef), [0, 0]))
+        writer = cfile.Writer(cfile.StyleOptions())
+        output = writer.write_str_elem(element)
+        self.assertEqual(output, "record_t a = {0, 0};")
+
+    def test_const_str_var_with_str_initializer(self):
+        char_type = core.Type("char", const=True, pointer=True)
+        element = core.Statement(core.Declaration(core.Variable("s", char_type), "Static Text"))
+        writer = cfile.Writer(cfile.StyleOptions())
+        output = writer.write_str_elem(element)
+        self.assertEqual(output, 'const char* s = "Static Text";')
 
 
 class TestSequence(unittest.TestCase):
 
     def test_variable_declarations(self):
         seq = core.Sequence()
-        seq.append(core.Statement(core.Variable("a", "int", static=True)))
-        seq.append(core.Statement(core.Variable("b", core.Type("void", pointer=True), static=True)))
+        seq.append(core.Statement(core.Declaration(core.Variable("a", "int", static=True))))
+        seq.append(core.Statement(core.Declaration(core.Variable("b", core.Type("void", pointer=True), static=True))))
         writer = cfile.Writer(cfile.StyleOptions())
         output = writer.write_str(seq)
         expected = "static int a;\n" + "static void* b;\n"
         self.assertEqual(expected, output)
 
-    def test_statement_and_comment_using_line_element(self):
+    def test_variable_declaration_and_comment_using_line_element(self):
         seq = core.Sequence()
-        seq.append(core.Line([core.Statement(core.Variable("a", "int")), core.BlockComment(" Comment ")]))
+        seq.append(core.Line([core.Statement(core.Declaration(core.Variable("a", "int"))),
+                              core.BlockComment(" Comment ")]))
         writer = cfile.Writer(cfile.StyleOptions())
         output = writer.write_str(seq)
         expected = "int a; /* Comment */\n"
         self.assertEqual(expected, output)
 
-    def test_statement_and_comment_using_python_list(self):
+    def test_variable_declaration_and_comment_using_python_list(self):
         seq = core.Sequence()
-        seq.append([core.Statement(core.Variable("a", "int")), core.BlockComment(" Comment ")])
+        seq.append([core.Statement(core.Declaration(core.Variable("a", "int"))), core.BlockComment(" Comment ")])
         writer = cfile.Writer(cfile.StyleOptions())
         output = writer.write_str(seq)
         expected = "int a; /* Comment */\n"
@@ -412,7 +462,7 @@ class TestBlock(unittest.TestCase):
 
     def test_wrap_brace_after_function(self):
         seq = core.Sequence()
-        seq.append(core.Function("f"))
+        seq.append(core.Declaration(core.Function("f")))
         seq.append(core.Block())
         writer = cfile.Writer(cfile.StyleOptions(break_before_braces=style.BreakBeforeBraces.ALLMAN))
         output = writer.write_str(seq)
@@ -421,7 +471,7 @@ class TestBlock(unittest.TestCase):
 
     def test_attach_brace_to_function(self):
         seq = core.Sequence()
-        seq.append(core.Function("f"))
+        seq.append(core.Declaration(core.Function("f")))
         seq.append(core.Block())
         writer = cfile.Writer(cfile.StyleOptions(break_before_braces=style.BreakBeforeBraces.ATTACH))
         output = writer.write_str(seq)
@@ -430,9 +480,9 @@ class TestBlock(unittest.TestCase):
 
     def test_variable_declarations(self):
         block = core.Block()
-        block.append(core.Statement(core.Variable("a", "int")))
-        block.append(core.Statement(core.Variable("b", "int")))
-        block.append(core.Statement(core.Variable("c", "int")))
+        block.append(core.Statement(core.Declaration(core.Variable("a", "int"))))
+        block.append(core.Statement(core.Declaration(core.Variable("b", "int"))))
+        block.append(core.Statement(core.Declaration(core.Variable("c", "int"))))
         writer = cfile.Writer(cfile.StyleOptions())
         expected = "\n".join(["{", "    int a;", "    int b;", "    int c;", "}"])
         output = writer.write_str_elem(block)
@@ -440,7 +490,7 @@ class TestBlock(unittest.TestCase):
 
     def test_function_definition(self):
         seq = core.Sequence()
-        seq.append(core.Function("add", "int").make_param("a", "int").make_param("b", "int"))
+        seq.append(core.Declaration(core.Function("add", "int").make_param("a", "int").make_param("b", "int")))
         body = core.Block()
         body.append(core.Statement("return a + b"))
         seq.append(body)
@@ -459,7 +509,7 @@ class TestBlock(unittest.TestCase):
         outer.append(inner)
         struct = core.Struct("IntPair", members=[core.StructMember("first", "int"),
                                                  core.StructMember("second", "int")])
-        inner.append(core.Statement(struct))
+        inner.append(core.Statement(core.Declaration(struct)))
         allman_writer = cfile.Writer(cfile.StyleOptions(break_before_braces=style.BreakBeforeBraces.ALLMAN))
         output = allman_writer.write_str(outer)
         expected = """{
@@ -497,19 +547,19 @@ class TestFunctionCall(unittest.TestCase):
         self.assertEqual(output, "f()")
 
     def test_call_with_one_arg(self):
-        element = core.FunctionCall("f").add_arg(0)
+        element = core.FunctionCall("f", args=[0])
         writer = cfile.Writer(cfile.StyleOptions())
         output = writer.write_str_elem(element)
         self.assertEqual(output, "f(0)")
 
     def test_call_with_two_args_direct(self):
-        element = core.FunctionCall("f", "i++", "enabled")
+        element = core.FunctionCall("f", args=["i++", "enabled"])
         writer = cfile.Writer(cfile.StyleOptions())
         output = writer.write_str_elem(element)
         self.assertEqual(output, "f(i++, enabled)")
 
     def test_call_with_two_args_chained(self):
-        element = core.FunctionCall("f").add_arg("i++").add_arg("enabled")
+        element = core.FunctionCall("f").append("i++").append("enabled")
         writer = cfile.Writer(cfile.StyleOptions())
         output = writer.write_str_elem(element)
         self.assertEqual(output, "f(i++, enabled)")
@@ -542,43 +592,43 @@ class TestFunctionReturn(unittest.TestCase):
         self.assertEqual(output, "return retval")
 
 
-class TestTypeDef(unittest.TestCase):
+class TestTypedef(unittest.TestCase):
 
     def test_type_is_int(self):
-        element = core.TypeDef("MyInt", "int")
+        datatype = core.TypeDef("MyInt", "int")
         writer = cfile.Writer(cfile.StyleOptions())
-        output = writer.write_str_elem(element)
+        output = writer.write_str_elem(core.Declaration(datatype))
         self.assertEqual(output, "typedef int MyInt")
 
     def test_type_is_const_int(self):
-        element = core.TypeDef("MyConstInt", core.Type("int", const=True))
+        datatype = core.TypeDef("MyConstInt", "int", const=True)
         writer = cfile.Writer(cfile.StyleOptions())
-        output = writer.write_str_elem(element)
+        output = writer.write_str_elem(core.Declaration(datatype))
         self.assertEqual(output, "typedef const int MyConstInt")
 
     def test_type_is_int_ptr(self):
-        element = core.TypeDef("MyIntPtr", core.Type("int", pointer=True))
+        datatype = core.TypeDef("MyIntPtr", "int", pointer=True)
         writer = cfile.Writer(cfile.StyleOptions())
-        output = writer.write_str_elem(element)
+        output = writer.write_str_elem(core.Declaration(datatype))
         self.assertEqual(output, "typedef int* MyIntPtr")
 
     def test_type_is_int_ptr__right_align(self):
-        element = core.TypeDef("MyIntPtr", core.Type("int", pointer=True))
+        datatype = core.TypeDef("MyIntPtr", "int", pointer=True)
         writer = cfile.Writer(
             cfile.StyleOptions(pointer_alignment=style.Alignment.RIGHT))
-        output = writer.write_str_elem(element)
+        output = writer.write_str_elem(core.Declaration(datatype))
         self.assertEqual(output, "typedef int *MyIntPtr")
 
     def test_type_is_int__typedf_is_ptr(self):
-        element = core.TypeDef("MyIntPtr", core.Type("int"), pointer=True)
+        datatype = core.TypeDef("MyIntPtr", core.Type("int"), pointer=True)
         writer = cfile.Writer(cfile.StyleOptions())
-        output = writer.write_str_elem(element)
+        output = writer.write_str_elem(core.Declaration(datatype))
         self.assertEqual(output, "typedef int* MyIntPtr")
 
-    def test_type_is_int_ptr__type_def_is_ptr(self):
-        element = core.TypeDef("MyIntPtrPtr", core.Type("int", pointer=True), pointer=True)
+    def test_type_is_int_ptr__typedef_is_ptr_left_align(self):
+        datatype = core.TypeDef("MyIntPtrPtr", core.Type("int", pointer=True), pointer=True)
         writer = cfile.Writer(cfile.StyleOptions())
-        output = writer.write_str_elem(element)
+        output = writer.write_str_elem(core.Declaration(datatype))
         self.assertEqual(output, "typedef int** MyIntPtrPtr")
 
 
@@ -591,7 +641,8 @@ class TestLine(unittest.TestCase):
         self.assertEqual(output, "Any code expression\n")
 
     def test_statement_with_comment(self):
-        element = core.Line([core.Statement(core.Variable("value", "int")), core.LineComment("Comment")])
+        element = core.Line([core.Statement(core.Declaration(core.Variable("value", "int"))),
+                             core.LineComment("Comment")])
         writer = cfile.Writer(cfile.StyleOptions())
         output = writer.write_str_elem(element, trim_end=False)
         self.assertEqual(output, "int value; //Comment\n")
@@ -620,29 +671,30 @@ extern "C"
 class TestStructDeclaration(unittest.TestCase):
 
     def test_zero_sized_struct(self):
-        element = core.Struct("MyStruct")
+        struct = core.Struct("MyStruct")
         writer = cfile.Writer(cfile.StyleOptions())
         expected = """struct MyStruct
 {
 }"""
-        self.assertEqual(expected, writer.write_str_elem(element))
+        self.assertEqual(expected, writer.write_str_elem(core.Declaration(struct)))
 
     def test_struct_with_int_member(self):
-        element = core.Struct("MyStruct", members=core.StructMember("first", "int"))
+        struct = core.Struct("MyStruct", members=core.StructMember("first", "int"))
         writer = cfile.Writer(cfile.StyleOptions())
         expected = """struct MyStruct
 {
     int first;
 }"""
-        self.assertEqual(expected, writer.write_str_elem(element))
+        self.assertEqual(expected, writer.write_str_elem(core.Declaration(struct)))
 
     def test_typedef_struct_statement(self):
         struct = core.Struct("Struct_IntPair",
                              members=[core.StructMember("first", "int"),
                                       core.StructMember("second", "int")])
-        statement = core.Statement(core.TypeDef("IntPair_T", struct))
+        statement = core.Statement(core.Declaration(core.TypeDef("IntPair_T", core.Declaration(struct))))
         writer = cfile.Writer(cfile.StyleOptions())
         output = writer.write_str_elem(statement)
+        print(">>> " + output)
         expected = """typedef struct Struct_IntPair
 {
     int first;
@@ -652,11 +704,11 @@ class TestStructDeclaration(unittest.TestCase):
 
     def test_struct_declaration_with_struct_ref_member(self):
         struct = core.Struct("os_alarm_cfg_tag",
-                             members=[core.StructMember("taskPtr", core.StructRef("os_task_tag", pointer=True)),
+                             members=[core.StructMember("taskPtr", core.Struct("os_task_tag"), pointer=True),
                                       core.StructMember("eventMask", "uint32_t"),
                                       core.StructMember("initDelayMs", "uint32_t"),
                                       core.StructMember("periodMs", "uint32_t")])
-        statement = core.Statement(core.TypeDef("os_alarm_cfg_t", struct))
+        statement = core.Statement(core.Declaration(core.TypeDef("os_alarm_cfg_t", core.Declaration(struct))))
         writer = cfile.Writer(cfile.StyleOptions())
         expected = """typedef struct os_alarm_cfg_tag
 {
@@ -668,35 +720,36 @@ class TestStructDeclaration(unittest.TestCase):
         self.assertEqual(expected, writer.write_str_elem(statement))
 
 
-class TestStructRef(unittest.TestCase):
+class TestStructReference(unittest.TestCase):
 
     def test_struct_variable(self):
-        element = core.Variable("time", core.StructRef("timespec"))
+        struct = core.Variable("time", core.Struct("timespec"))
         writer = cfile.Writer(cfile.StyleOptions())
-        self.assertEqual('struct timespec time', writer.write_str_elem(element))
+        self.assertEqual('struct timespec time', writer.write_str_elem(core.Declaration(struct)))
 
     def test_struct_parameter(self):
-        element = core.Function("process_time", "void", parameters=[core.Variable("time", core.StructRef("timespec"))])
+        func = core.Function("process_time", "void", params=[core.Variable("time",
+                                                             core.Struct("timespec"))])
         writer = cfile.Writer(cfile.StyleOptions())
-        self.assertEqual('void process_time(struct timespec time)', writer.write_str_elem(element))
+        self.assertEqual('void process_time(struct timespec time)', writer.write_str_elem(core.Declaration(func)))
 
     def test_struct_return_and_struct_parameter(self):
-        element = core.Function("timespec_add",
-                                core.StructRef("timespec"),
-                                static=True,
-                                parameters=[core.Variable("time1", core.StructRef("timespec")),
-                                            core.Variable("time2", core.StructRef("timespec"))])
+        func = core.Function("timespec_add",
+                             core.Struct("timespec"),
+                             static=True,
+                             params=[core.Variable("time1", core.Struct("timespec")),
+                                     core.Variable("time2", core.Struct("timespec"))])
         writer = cfile.Writer(cfile.StyleOptions())
-        output = writer.write_str_elem(element)
+        output = writer.write_str_elem(core.Declaration(func))
         self.assertEqual('static struct timespec timespec_add(struct timespec time1, struct timespec time2)', output)
 
     def test_struct_forward_declaration(self):
         """
         Forward declaration of struct as a separate statement
         """
-        element = core.Statement(core.StructRef("os_task_tag"))
+        struct = core.Statement(core.Struct("os_task_tag"))
         writer = cfile.Writer(cfile.StyleOptions())
-        self.assertEqual('struct os_task_tag;', writer.write_str_elem(element))
+        self.assertEqual('struct os_task_tag;', writer.write_str_elem(struct))
 
 
 if __name__ == '__main__':
