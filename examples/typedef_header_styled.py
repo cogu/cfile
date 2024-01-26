@@ -1,5 +1,8 @@
 """
-Example header file with some type declarations
+Example header file with some type declaration and formatting style
+
+- new-line after opening brace
+- pointer aligns to the right
 """
 import cfile
 
@@ -32,6 +35,7 @@ code.append(C.ifndef("__cplusplus"))
 code.append(C.line("}"))
 code.append([C.endif(), C.line_comment(" __cplusplus")])
 code.append([C.endif(), C.line_comment(" " + INCLUDE_GUARD_TEXT)])
-
-writer = cfile.Writer(cfile.StyleOptions())
+style = cfile.StyleOptions(break_before_braces=cfile.BreakBeforeBraces.ATTACH,
+                           pointer_alignment=cfile.Alignment.RIGHT)
+writer = cfile.Writer(style)
 print(writer.write_str(code))

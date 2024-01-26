@@ -16,14 +16,18 @@ class ElementType(Enum):
     NONE = 0
     DIRECTIVE = 1
     COMMENT = 2
-    TYPE = 3
-    VARIABLE = 4
-    STATEMENT = 5
-    FUNCTION = 6
-    BLOCK_START = 7
-    BLOCK_END = 8
-    TYPEDEF = 9
-    STRUCT = 10
+    TYPE_DECLARATION = 3
+    STRUCT_DECLARATION = 4   # Should this be separate from type declaration?
+    VARIABLE_DECLARATION = 5
+    FUNCTION_DECLARATION = 6
+    TYPEDEF = 7
+    TYPE_INSTANCE = 8
+    STRUCT_INSTANCE = 9
+    VARIABLE_USAGE = 10
+    FUNCTION_CALL = 11
+    STATEMENT = 12
+    BLOCK_START = 13
+    BLOCK_END = 14
 
 
 class Formatter:
@@ -32,8 +36,8 @@ class Formatter:
     """
     def __init__(self, indent_width: int,
                  indentation_char: str) -> None:
-        self.file_path: str = None
-        self.fh: TextIO = None  # pylint: disable=invalid-name
+        self.file_path: str | None = None
+        self.fh: TextIO | None = None  # pylint: disable=invalid-name
         self.indentation_char: str = indentation_char
         self.white_space_char: str = " "
         self.indent_width = indent_width  # Number of characters (spaces) per indendation
@@ -96,14 +100,16 @@ class Writer(Formatter):
         super().__init__(style.indent_width, style.indent_char)
         self.style = style
         self.switcher_all = {
-            "Type": self._write_type,
-            "Variable": self._write_variable,
-            "Function": self._write_function,
+            "Type": self._write_base_type,
+            "TypeDef": self._write_typedef_usage,
+            "Struct": self._write_struct_usage,
+            "Variable": self._write_variable_usage,
+            "Function": self._write_function_usage,
+            "Declaration": self._write_declaration,
             "Assignment": self._write_assignment,
             "StringLiteral": self._write_string_literal,
             "FunctionReturn": self._write_func_return,
             "FunctionCall": self._write_func_call,
-            "TypeDef": self._write_type_def,
             "Blank": self._write_blank,
             "Whitespace": self._write_whitespace,
             "LineComment": self._write_line_comment,
@@ -117,8 +123,6 @@ class Writer(Formatter):
             "IfndefDirective": self._write_ifndef_directive,
             "EndifDirective": self._write_endif_directive,
             "Extern": self._write_extern,
-            "Struct": self._write_struct,
-            "StructRef": self._write_type,
         }
         self.last_element = ElementType.NONE
 
@@ -137,6 +141,7 @@ class Writer(Formatter):
         assert isinstance(sequence, core.Sequence)
         self._str_open()
         self._write_sequence(sequence)
+        assert isinstance(self.fh, StringIO)
         return self.fh.getvalue()
 
     def write_str_elem(self, elem: Any, trim_end: bool = True) -> str:
@@ -145,6 +150,7 @@ class Writer(Formatter):
         """
         self._str_open()
         self._write_element(elem)
+        assert isinstance(self.fh, StringIO)
         value = self.fh.getvalue()
         return value.removesuffix("\n") if trim_end else value
 
@@ -167,7 +173,7 @@ class Writer(Formatter):
                 self._write_line_element(tmp)
             elif isinstance(elem, core.Function):
                 self._start_line()
-                self._write_function(elem)
+                self._write_function_usage(elem)
             elif isinstance(elem, core.Statement):
                 self._start_line()
                 self._write_statement(elem)
@@ -232,7 +238,10 @@ class Writer(Formatter):
         """
         Writes line comment
         """
-        self._write("//" + elem.text)
+        if isinstance(elem.text, str):
+            self._write("//" + elem.text)
+        else:
+            raise NotImplementedError("list of strings not yet supported")
         self.last_element = ElementType.COMMENT
 
     def _write_block_comment(self, elem: core.BlockComment) -> None:
@@ -263,12 +272,63 @@ class Writer(Formatter):
                 self._write_line(line_start + line)
             self._write(lines[-1] + f"{'*'*width}/")
 
-    def _write_type(self, elem: core.Type | core.StructRef) -> None:
+    def _write_declaration(self, elem: core.Declaration) -> None:
         """
-        Writes data type
+        Declares type, typedef, variable or function
+        """
+        if isinstance(elem.element, core.Type):
+            self._write_type_declaration(elem.element)
+        elif isinstance(elem.element, core.TypeDef):
+            self._write_typedef_declaration(elem.element)
+        elif isinstance(elem.element, core.Struct):
+            self._write_struct_declaration(elem.element)
+        elif isinstance(elem.element, core.Variable):
+            self._write_variable_declaration(elem.element)
+        elif isinstance(elem.element, core.Function):
+            self._write_function_declaration(elem.element)
+        else:
+            raise NotImplementedError(str(type(elem.element)))
+        if elem.init_value is not None:
+            self._write(" = ")
+            self._write_initializer(elem.init_value)
+
+    def _write_initializer(self, value: Any) -> None:
+        """
+        Writes initializer
+        """
+        if isinstance(value, list):
+            self._write("{")
+            for i, member in enumerate(value):
+                if i > 0:
+                    self._write(", ")
+                self._write_initializer_member(member)
+            self._write("}")
+        else:
+            self._write_initializer_member(value)
+
+    def _write_initializer_member(self, value: Any) -> None:
+        """
+        Writes initializer member
+        """
+        if isinstance(value, int):
+            self._write(str(value))
+        elif isinstance(value, str):
+            self._write(f'"{value}"')
+        else:
+            raise NotImplementedError(str(type(value)))
+
+    def _write_base_type(self, elem: core.Type) -> None:
+        """
+        Writes name of type
+        """
+        self._write(elem.base_type)
+
+    def _write_type_declaration(self, elem: core.Type) -> None:
+        """
+        Writes type declaration
         """
         self._write(self._format_type(elem))
-        self.last_element = ElementType.TYPE
+        self.last_element = ElementType.TYPE_DECLARATION
 
     def _format_type(self, elem: core.Type) -> str:
         parts = []
@@ -288,13 +348,11 @@ class Writer(Formatter):
                 raise RuntimeError(f"Used qualifier '{key}' not part of selected qualifier_order list")
         return " ".join(parts)
 
-    def _format_type_part(self, elem: core.Type | core.StructRef) -> str:
+    def _format_type_part(self, elem: core.Type) -> str:
         """
         Writes type name and pointer
         """
         result = ""
-        if isinstance(elem, core.StructRef):
-            result += "struct "
         if isinstance(elem.base_type, str):
             result += elem.base_type
         else:
@@ -305,10 +363,17 @@ class Writer(Formatter):
             elif self.style.pointer_alignment == c_style.Alignment.RIGHT:
                 result += " *"
             elif self.style.pointer_alignment == c_style.Alignment.MIDDLE:
-                result += " * "
+                result += " *"
         return result
 
-    def _write_variable(self, elem: core.Variable) -> None:
+    def _write_variable_usage(self, elem: core.Variable) -> None:
+        """
+        Writes variable usage
+        """
+        self._write(elem.name)
+        self.last_element = ElementType.VARIABLE_USAGE
+
+    def _write_variable_declaration(self, elem: core.Variable) -> None:
         """
         Writes variable declaration
         """
@@ -316,53 +381,16 @@ class Writer(Formatter):
             self._write("static ")
         if elem.extern:
             self._write("extern ")
-        self._write_type(elem.data_type)
-        result = ""
-        if elem.pointer:
-            if elem.const:
-                if self.style.space_around_pointer_qualifiers == c_style.SpaceLocation.DEFAULT:
-                    if self.style.pointer_alignment == c_style.Alignment.LEFT:
-                        result += "* const "
-                    elif self.style.pointer_alignment == c_style.Alignment.RIGHT:
-                        result += "*const "
-                    elif self.style.pointer_alignment == c_style.Alignment.MIDDLE:
-                        result += " * const "
-                    else:
-                        raise ValueError(self.style.pointer_alignment)
-                else:
-                    raise NotImplementedError("Only default space location supported for pointer qualifiers")
-            else:
-                if self.style.pointer_alignment == c_style.Alignment.LEFT:
-                    result += "* "
-                elif self.style.pointer_alignment == c_style.Alignment.RIGHT:
-                    if elem.data_type.pointer:
-                        result += "*"
-                    else:
-                        result += " *"
-                elif self.style.pointer_alignment == c_style.Alignment.MIDDLE:
-                    result += " * "
-                else:
-                    raise ValueError(self.style.pointer_alignment)
-        else:
-            if not (elem.data_type.pointer and self.style.pointer_alignment == c_style.Alignment.RIGHT):
-                result += " "
-        result += elem.name
-        if elem.array is not None:
-            result += f"[{elem.array}]"
-        self._write(result)
-        self.last_element = ElementType.VARIABLE
-
-    def _write_type_def(self, elem: core.TypeDef):
-        """
-        Writes typedef
-        """
-        self._write("typedef ")
         if isinstance(elem.data_type, core.Type):
-            self._write_type(elem.data_type)
+            self._write_type_declaration(elem.data_type)
         elif isinstance(elem.data_type, core.Struct):
-            self._write_struct(elem.data_type)
+            self._write_struct_usage(elem.data_type)
+        elif isinstance(elem.data_type, core.Declaration):
+            self._write_declaration(elem.data_type)
+        elif isinstance(elem.data_type, core.TypeDef):
+            self._write_typedef_usage(elem.data_type)
         else:
-            raise NotImplementedError(elem.data_type)
+            raise NotImplementedError(str(type(elem.data_type)))
         result = ""
         if elem.pointer:
             if elem.const:
@@ -389,17 +417,87 @@ class Writer(Formatter):
                     result += " * "
                 else:
                     raise ValueError(self.style.pointer_alignment)
+        elif isinstance(elem.data_type, core.Type):
+            if not (elem.data_type.pointer and self.style.pointer_alignment == c_style.Alignment.RIGHT):
+                result += " "
         else:
-            if not ((isinstance(elem.data_type, core.Type) and elem.data_type.pointer) and (
+            result += " "
+        result += elem.name
+        if elem.array is not None:
+            result += f"[{elem.array}]"
+        self._write(result)
+        self.last_element = ElementType.VARIABLE_DECLARATION
+
+    def _write_typedef_usage(self, elem: core.TypeDef):
+        """
+        Writes typedef usage
+        """
+        if not elem.name:
+            raise ValueError("Typedef without name detected")
+        self._write(elem.name)
+
+    def _write_typedef_declaration(self, elem: core.TypeDef):
+        """
+        Writes typedef declaration
+        """
+        self._write("typedef ")
+
+        if elem.const and not elem.pointer:
+            self._write("const ")
+        if isinstance(elem.base_type, core.Type):
+            self._write_type_declaration(elem.base_type)
+        elif isinstance(elem.base_type, core.Struct):
+            self._write_struct_usage(elem.base_type)
+        elif isinstance(elem.base_type, core.Declaration):
+            self._write_declaration(elem.base_type)
+        else:
+            raise NotImplementedError(str(type(elem.base_type)))
+        result = ""
+        if elem.pointer:
+            if elem.const:
+                if self.style.space_around_pointer_qualifiers == c_style.SpaceLocation.DEFAULT:
+                    if self.style.pointer_alignment == c_style.Alignment.LEFT:
+                        result += "* const "
+                    elif self.style.pointer_alignment == c_style.Alignment.RIGHT:
+                        result += "*const "
+                    elif self.style.pointer_alignment == c_style.Alignment.MIDDLE:
+                        result += " * const "
+                    else:
+                        raise ValueError(self.style.pointer_alignment)
+                else:
+                    raise NotImplementedError("Only default space location supported for pointer qualifiers")
+            else:
+                if self.style.pointer_alignment == c_style.Alignment.LEFT:
+                    result += "* "
+                elif self.style.pointer_alignment == c_style.Alignment.RIGHT:
+                    if isinstance(elem.base_type, core.Type) and elem.base_type.pointer:
+                        result += "*"
+                    else:
+                        result += " *"
+                elif self.style.pointer_alignment == c_style.Alignment.MIDDLE:
+                    result += " * "
+                else:
+                    raise ValueError(self.style.pointer_alignment)
+        else:
+            if not ((isinstance(elem.base_type, core.Type) and elem.base_type.pointer) and (
                     self.style.pointer_alignment == c_style.Alignment.RIGHT)):
                 result += " "
+        assert elem.name is not None
         result += elem.name
         if elem.array is not None:
             result += f"[{elem.array}]"
         self._write(result)
         self.last_element = ElementType.TYPEDEF
 
-    def _write_function(self, elem: core.Function) -> None:
+    def _write_function_usage(self, elem: core.Function) -> None:
+        """
+        Writes function usage (name of the function)
+        """
+        if not elem.name:
+            raise ValueError("Function with no name detected")
+        self._write(elem.name)
+
+    def _write_function_declaration(self, elem: core.Function) -> None:
         """
         Writes function declaration
         """
@@ -407,17 +505,22 @@ class Writer(Formatter):
             self._write("extern ")
         if elem.static:
             self._write("static ")
-        self._write_type(elem.return_type)
+        if isinstance(elem.return_type, core.Type):
+            self._write_type_declaration(elem.return_type)
+        elif isinstance(elem.return_type, core.Struct):
+            self._write_struct_usage(elem.return_type)
+        else:
+            raise NotImplementedError(str(type(elem.return_type)))
         self._write(f" {elem.name}(")
         if len(elem.params):
             for i, param in enumerate(elem.params):
                 if i:
                     self._write(", ")
-                self._write_variable(param)
+                self._write_variable_declaration(param)
         else:
             self._write("void")
         self._write(")")
-        self.last_element = ElementType.FUNCTION
+        self.last_element = ElementType.FUNCTION_DECLARATION
 
     def _write_block(self, elem: core.Block) -> None:
         """
@@ -439,7 +542,7 @@ class Writer(Formatter):
 
     def _write_starting_brace(self) -> None:
         handled = False
-        if self.last_element == ElementType.FUNCTION:
+        if self.last_element == ElementType.FUNCTION_DECLARATION:
             handled = True
             if self.style.brace_wrapping.after_function:
                 self._eol()
@@ -478,7 +581,7 @@ class Writer(Formatter):
 
     def _write_assignment(self, elem: core.Assignment) -> None:
         self._write_expression(elem.lhs)
-        self._write(" ")
+        self._write(" = ")
         self._write_expression(elem.rhs)
 
     def _write_string_literal(self, elem: core.StringLiteral) -> None:
@@ -496,9 +599,17 @@ class Writer(Formatter):
             self._write_expression(arg)
         self._write(")")
 
-    def _write_struct(self, elem: core.Struct) -> None:
+    def _write_struct_usage(self, elem: core.Struct) -> None:
         """
-        Writes variable declaration
+        Writes struct usage
+        """
+        if not elem.name:
+            raise ValueError("struct doesn't have a name. Did you mean to use a declaration?")
+        self._write(f"struct {elem.name}")
+
+    def _write_struct_declaration(self, elem: core.Struct) -> None:
+        """
+        Writes struct declaration
         """
         self._write(f"struct {elem.name}")
         if self.style.brace_wrapping.after_struct:
@@ -520,13 +631,18 @@ class Writer(Formatter):
             self._dedent()
         self._start_line()
         self._write("}")
-        self.last_element = ElementType.STRUCT
+        self.last_element = ElementType.STRUCT_DECLARATION
 
     def _write_struct_member(self, elem: core.StructMember) -> None:
         """
         Writes struct member
         """
-        self._write_type(elem.data_type)
+        if isinstance(elem.data_type, core.Type):
+            self._write_type_declaration(elem.data_type)
+        elif isinstance(elem.data_type, core.Struct):
+            self._write_struct_usage(elem.data_type)
+        else:
+            raise NotImplementedError(str(type(elem.data_type)))
         result = ""
         if elem.pointer:
             if elem.const:
@@ -545,7 +661,7 @@ class Writer(Formatter):
                 if self.style.pointer_alignment == c_style.Alignment.LEFT:
                     result += "* "
                 elif self.style.pointer_alignment == c_style.Alignment.RIGHT:
-                    if elem.data_type.pointer:
+                    if isinstance(elem.data_type, core.Type) and elem.data_type.pointer:
                         result += "*"
                     else:
                         result += " *"
@@ -554,7 +670,8 @@ class Writer(Formatter):
                 else:
                     raise ValueError(self.style.pointer_alignment)
         else:
-            if not (elem.data_type.pointer and self.style.pointer_alignment == c_style.Alignment.RIGHT):
+            if not (isinstance(elem.data_type, core.Type) and elem.data_type.pointer and (
+                    self.style.pointer_alignment == c_style.Alignment.RIGHT)):
                 result += " "
         result += elem.name
         if elem.array is not None:

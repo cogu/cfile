@@ -99,8 +99,8 @@ class StyleOptions:
                  brace_wrapping: BraceWrapping | None = None,  # Only used when break_before_braces is CUSTOM
                  pointer_alignment: Alignment = Alignment.LEFT,
                  space_around_pointer_qualifiers: SpaceLocation = SpaceLocation.DEFAULT,
-                 type_qualifier_order: list[str] | tuple[str] = None,
-                 storage_class_order: list[str] | tuple[str] = None,
+                 type_qualifier_order: list[str] | tuple[str] | None = None,
+                 storage_class_order: list[str] | tuple[str] | None = None,
                  short_functions_on_single_line: ShortFunction = ShortFunction.NEVER) -> None:
         self.break_before_braces = break_before_braces
         self.indent_width = indent_width
