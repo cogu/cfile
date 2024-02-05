@@ -12,9 +12,10 @@ code = C.sequence()
 code.append(C.sysinclude("stdio.h"))
 code.append(C.blank())
 char_ptr_type = C.type("char", pointer=True)
-code.append(C.declaration(C.function("main", "int", params=[C.variable("argc", "int"),
-                                                            C.variable("argv", char_ptr_type, pointer=True)
-                                                            ])))
+code.append(C.declaration(C.function("main", "int",
+                                     params=[C.variable("argc", "int"),
+                                             C.variable("argv", char_ptr_type, pointer=True)
+                                             ])))
 main_body = C.block()
 main_body.append(C.statement(C.func_call("printf", C.str_literal(r"Hello World\n"))))
 main_body.append(C.statement(C.func_return(0)))
@@ -48,9 +49,10 @@ code = C.sequence()
 code.append(C.sysinclude("stdio.h"))
 code.append(C.blank())
 char_ptr_type = C.type("char", pointer=True)
-code.append(C.declaration(C.function("main", "int", params=[C.variable("argc", "int"),
-                                                            C.variable("argv", char_ptr_type, pointer=True)
-                                                            ])))
+code.append(C.declaration(C.function("main", "int",
+                                     params=[C.variable("argc", "int"),
+                                             C.variable("argv", char_ptr_type, pointer=True)
+                                             ])))
 main_body = C.block()
 main_body.append(C.statement(C.func_call("printf", C.str_literal(r"Hello World\n"))))
 main_body.append(C.statement(C.func_return(0)))
