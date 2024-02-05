@@ -694,7 +694,6 @@ class TestStructDeclaration(unittest.TestCase):
         statement = core.Statement(core.Declaration(core.TypeDef("IntPair_T", core.Declaration(struct))))
         writer = cfile.Writer(cfile.StyleOptions())
         output = writer.write_str_elem(statement)
-        print(">>> " + output)
         expected = """typedef struct Struct_IntPair
 {
     int first;

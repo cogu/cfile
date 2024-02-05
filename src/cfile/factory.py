@@ -3,7 +3,7 @@ Factory classes
 """
 from collections import namedtuple
 from typing import Union, Any
-import cfile.core as core
+from cfile import core
 
 BuiltInTypes = namedtuple("BuiltInTypes", ["char",
                                            "short",
