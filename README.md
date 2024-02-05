@@ -23,6 +23,8 @@ writer = cfile.Writer(cfile.StyleOptions())
 print(writer.write_str(code))
 ```
 
+Output
+
 ```C
    #include <stdio.h>
 
@@ -59,6 +61,8 @@ writer = cfile.Writer(style)
 print(writer.write_str(code))
 ```
 
+Output
+
 ```C
    #include <stdio.h>
 
@@ -70,15 +74,17 @@ print(writer.write_str(code))
 
 ## Important update about declarations
 
-Starting from version 0.3.1 you need to wrap functions, variables, structs and typedefs inside `C.declaraton` to actually declare them.
-Before v0.3.1 these elements were implicitly declared when encountered in the code sequence.
+Starting from version 0.3.2 you need to wrap functions, variables, structs and typedefs inside `C.declaraton` to actually declare them.
+Before v0.3.2 these elements were implicitly declared when encountered in the code sequence.
 
-Not using `C.declaration` will only print the name when used on variables, functions or typedefs. For structs it will have the following meaning:
+Not using `C.declaration` will only print the name when used on variables, functions or typedefs.
 
-* without declaration: Will only forward declare the struct type.
-* With declaration: Will fully declare the struct and its members.
+For structs it will have the following meaning:
 
-Example:
+- without declaration: Will only forward declare the struct type.
+- With declaration: Will fully declare the struct and its members.
+
+Example
 
 ```python
 import cfile
@@ -96,6 +102,8 @@ writer = cfile.Writer(cfile.StyleOptions())
 print(writer.write_str(code))
 ```
 
+Output
+
 ```C
 struct mystruct;
 
@@ -108,7 +116,7 @@ struct mystruct
 
 When declaring typedefs of structs you can wrap the struct declaration inside the declaration of the typedef.
 
-Example:
+Example
 
 ```python
 import cfile
@@ -124,11 +132,44 @@ writer = cfile.Writer(cfile.StyleOptions(break_before_braces=cfile.BreakBeforeBr
 print(writer.write_str(code))
 ```
 
+Output
+
 ```C
 typedef struct mystruct {
     int field_1;
     int field_2;
 } mystruct_t;
+```
+
+There's some basic support for struct initializers. By rearranging the code from the example above we can
+declare a new struct variable named `instance` with initializer.
+
+```python
+import cfile
+
+C = cfile.CFactory()
+code = C.sequence()
+struct = C.struct("mystruct",
+                  members=[C.struct_member("field_1", "int"),
+                           C.struct_member("field_2", "int")])
+struct_type = C.typedef("my_struct_t", C.declaration(struct))
+code.append(C.statement(C.declaration(struct_type)))
+code.append(C.blank())
+code.append(C.statement(C.declaration(C.variable("instance", struct_type), [0, 0])))
+
+writer = cfile.Writer(cfile.StyleOptions(break_before_braces=cfile.BreakBeforeBraces.ATTACH))
+print(writer.write_str(code))
+```
+
+Output
+
+```C
+typedef struct mystruct {
+    int field_1;
+    int field_2;
+} my_struct_t;
+
+my_struct_t instance = {0, 0};
 ```
 
 ## Requires
