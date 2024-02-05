@@ -5,7 +5,7 @@ cfile writer
 from io import StringIO
 from enum import Enum
 from typing import TextIO, Any
-import cfile.core as core
+from cfile import core
 import cfile.style as c_style
 
 
