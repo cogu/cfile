@@ -2,7 +2,13 @@
 
 Notable changes.
 
-## Unreleased
+## [v0.3.2]
+
+**Until v0.3.1:** Variables, functions and types were implicitly declared.
+
+**From v0.3.2:** Variables, functions and types needs explicit declaration.
+
+Due to a major design flaw in previous versions, breaking compatibility was necessary.
 
 ### Removed
 
