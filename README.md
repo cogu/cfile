@@ -192,6 +192,6 @@ See [Changelog document](CHANGELOG.md).
 
 **v0.2:** No longer maintained.
 
-**v0.3:** Active development track. Code base is completely rewritten since v0.2.
+**v0.4:** Stable version (bug-fixes only).
 
-**v0.4:** Once v0.3 is stable enough it will be released to Pypi as v0.4.
+**v0.5:**: Development track.
