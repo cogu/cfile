@@ -194,4 +194,4 @@ See [Changelog document](CHANGELOG.md).
 
 **v0.4:** Stable version (bug-fixes only).
 
-**v0.5:**: Development track.
+**v0.5:** Development track.
