@@ -2,6 +2,12 @@
 
 Notable changes.
 
+## [Unreleased]
+
+### Changed
+
+* Improved readability of example code
+
 ## [v0.3.2]
 
 **Until v0.3.1:** Variables, functions and types were implicitly declared.
