@@ -1,5 +1,6 @@
 .venv/
 build/
+dist/
 sandbox/
 usage_tests/
 **/cfile.egg-info/

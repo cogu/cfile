@@ -11,3 +11,7 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[project.urls]
+Homepage = "https://github.com/cogu/cfile"
+Issues = "https://github.com/cogu/cfile/issues"
