@@ -180,7 +180,7 @@ Python 3.10+ (Needed for modern type hinting support).
 
 ## Documentation
 
-Documentation for v0.3 will be written at a later date.
+Documentation will be written at a later date.
 
 For currently supported style options see class StyleOptions in cfile.style module.
 
