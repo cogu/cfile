@@ -188,6 +188,8 @@ class Writer(Formatter):
             elif isinstance(elem, core.Line):
                 self._start_line()
                 self._write_line_element(elem)
+            elif isinstance(elem, core.Break):
+                self._write_break(elem)
             else:
                 self._start_line()
                 class_name = elem.__class__.__name__
@@ -709,3 +711,6 @@ class Writer(Formatter):
     def _write_extern(self, elem: core.Extern) -> None:
         self._write(f'extern "{elem.language}"')
         self.last_element = ElementType.DIRECTIVE
+
+    def _write_break(self, elem: core.Break):
+        self._write("break")

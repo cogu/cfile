@@ -227,3 +227,9 @@ class CFactory:
 
         """New declaration"""
         return core.Declaration(element, init_value)
+
+    def breakBlock(self) -> core.Break:
+        """
+        Adding break into block
+        """
+        return core.Break()

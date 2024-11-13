@@ -511,3 +511,8 @@ class Block(Sequence):
     """
     A sequence wrapped in braces
     """
+
+class Break(Element):
+    """
+    Adding break into block
+    """
