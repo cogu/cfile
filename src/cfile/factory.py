@@ -203,17 +203,19 @@ class CFactory:
     arg_types = int | float | str | core.Element
 
     def func_call(self,
-                  name: str,
+                  name: str | core.Function,
                   args: list[arg_types] | arg_types | None = None) -> core.FunctionCall:
         """
         New function call
         """
-        if args is None:
-            return core.FunctionCall(name, None)
-        elif isinstance(args, list):
-            return core.FunctionCall(name, args)
-        else:
-            return core.FunctionCall(name, [args])
+        args = args if (args is None) or isinstance(args, list) else [args]
+
+        if isinstance(name, core.Function):
+            if ((isinstance(name.params, list) or isinstance(args, list)) and len(name.params) != len(args)) or ((not name.params or not args) and name.params != args):
+                raise ValueError('Function declaration and function call params doesn\'t matched in size.')
+            name = name.name
+
+        return core.FunctionCall(name, args)
 
     def func_return(self, expression: int | float | str | core.Element) -> core.FunctionReturn:
         """
