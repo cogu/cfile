@@ -310,7 +310,9 @@ class Writer(Formatter):
         """
         Writes initializer member
         """
-        if isinstance(value, int):
+        if isinstance(value, bool):
+            self._write(str(value).lower())
+        elif isinstance(value, int):
             self._write(str(value))
         elif isinstance(value, str):
             self._write(f'"{value}"')
