@@ -227,3 +227,11 @@ class CFactory:
 
         """New declaration"""
         return core.Declaration(element, init_value)
+
+    def union_member(self, name: str, dataType: core.DataType, pointer: bool = False, array: int | None = None) -> core.UnionMember:
+
+        return core.UnionMember(name, dataType, pointer, array)
+
+    def union(self, name: str, members: list[core.UnionMember] | None = None) -> core.Union:
+
+        return core.Union(name, members, attributes)

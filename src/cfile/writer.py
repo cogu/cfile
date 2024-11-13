@@ -20,14 +20,16 @@ class ElementType(Enum):
     STRUCT_DECLARATION = 4   # Should this be separate from type declaration?
     VARIABLE_DECLARATION = 5
     FUNCTION_DECLARATION = 6
-    TYPEDEF = 7
-    TYPE_INSTANCE = 8
-    STRUCT_INSTANCE = 9
-    VARIABLE_USAGE = 10
-    FUNCTION_CALL = 11
-    STATEMENT = 12
-    BLOCK_START = 13
-    BLOCK_END = 14
+    UNION_DECLARATION = 7
+    TYPEDEF = 8
+    TYPE_INSTANCE = 9
+    STRUCT_INSTANCE = 10
+    UNION_INSTANCE = 11
+    VARIABLE_USAGE = 12
+    FUNCTION_CALL = 13
+    STATEMENT = 14
+    BLOCK_START = 15
+    BLOCK_END = 16
 
 
 class Formatter:
@@ -123,6 +125,7 @@ class Writer(Formatter):
             "IfndefDirective": self._write_ifndef_directive,
             "EndifDirective": self._write_endif_directive,
             "Extern": self._write_extern,
+            "Union": self._write_union_usage,
         }
         self.last_element = ElementType.NONE
 
@@ -282,6 +285,8 @@ class Writer(Formatter):
             self._write_typedef_declaration(elem.element)
         elif isinstance(elem.element, core.Struct):
             self._write_struct_declaration(elem.element)
+        elif isinstance(elem.element, core.Union):
+            self._write_union_declaration(elem.element)
         elif isinstance(elem.element, core.Variable):
             self._write_variable_declaration(elem.element)
         elif isinstance(elem.element, core.Function):
@@ -385,6 +390,8 @@ class Writer(Formatter):
             self._write_type_declaration(elem.data_type)
         elif isinstance(elem.data_type, core.Struct):
             self._write_struct_usage(elem.data_type)
+        elif isinstance(elem.data_type, core.Union):
+            self._write_union_usage(elem.data_type)
         elif isinstance(elem.data_type, core.Declaration):
             self._write_declaration(elem.data_type)
         elif isinstance(elem.data_type, core.TypeDef):
@@ -448,6 +455,8 @@ class Writer(Formatter):
             self._write_type_declaration(elem.base_type)
         elif isinstance(elem.base_type, core.Struct):
             self._write_struct_usage(elem.base_type)
+        elif isinstance(elem.base_type, core.Union):
+            self._write_union_usage(elem.base_type)
         elif isinstance(elem.base_type, core.Declaration):
             self._write_declaration(elem.base_type)
         else:
@@ -509,6 +518,8 @@ class Writer(Formatter):
             self._write_type_declaration(elem.return_type)
         elif isinstance(elem.return_type, core.Struct):
             self._write_struct_usage(elem.return_type)
+        elif isinstance(elem.return_type, core.Union):
+            self._write_union_usage(elem.return_type)
         else:
             raise NotImplementedError(str(type(elem.return_type)))
         self._write(f" {elem.name}(")
@@ -641,6 +652,8 @@ class Writer(Formatter):
             self._write_type_declaration(elem.data_type)
         elif isinstance(elem.data_type, core.Struct):
             self._write_struct_usage(elem.data_type)
+        elif isinstance(elem.data_type, core.Union):
+            self._write_union_usage(elem.data_type)
         else:
             raise NotImplementedError(str(type(elem.data_type)))
         result = ""
@@ -709,3 +722,71 @@ class Writer(Formatter):
     def _write_extern(self, elem: core.Extern) -> None:
         self._write(f'extern "{elem.language}"')
         self.last_element = ElementType.DIRECTIVE
+
+    def _write_union_member(self, elem: core.UnionMember):
+        """
+        Writes struct member
+        """
+        if isinstance(elem.data_type, core.Type):
+            self._write_type_declaration(elem.data_type)
+        elif isinstance(elem.data_type, core.Struct):
+            self._write_struct_usage(elem.data_type)
+        elif isinstance(elem.data_type, core.Union):
+            self._write_union_usage(elem.data_type)
+        elif isinstance(elem.data_type, core.TypeDef):
+            self._write_typedef_usage(elem.data_type)
+        elif isinstance(elem.data_type, str):
+            self._write(elem.data_type)
+        else:
+            raise NotImplementedError(str(type(elem.data_type))+" "+ elem.name)
+        result = ""
+        if elem.pointer:
+            if self.style.pointer_alignment == c_style.Alignment.LEFT:
+                result += "* "
+            elif self.style.pointer_alignment == c_style.Alignment.RIGHT:
+                if isinstance(elem.data_type, core.Type) and elem.data_type.pointer:
+                    result += "*"
+                else:
+                    result += " *"
+            elif self.style.pointer_alignment == c_style.Alignment.MIDDLE:
+                result += " * "
+            else:
+                raise ValueError(self.style.pointer_alignment)
+        else:
+            if not (isinstance(elem.data_type, core.Type) and elem.data_type.pointer and (
+                    self.style.pointer_alignment == c_style.Alignment.RIGHT)):
+                result += " "
+        result += elem.name
+        self._write(result)
+
+    def _write_union_usage(self, elem: core.Union):
+        """
+        Writes union usage
+        """
+        if not elem.name:
+            raise ValueError("union doesn't have a name. Did you mean to use a declaration?")
+        self._write(f"union {elem.name}")
+
+
+    def _write_union_declaration(self, elem: core.Union):
+        self._write(f"union {elem.name}")
+        if self.style.brace_wrapping.after_struct:
+            self._eol()
+            self._start_line()
+            self._write("{")
+            self._eol()
+        else:
+            self._write(" {")
+            self._eol()
+        if len(elem.members):
+            self._indent()
+        for member in elem.members:
+            self._start_line()
+            self._write_union_member(member)
+            self._write(";")
+            self._eol()
+        if len(elem.members):
+            self._dedent()
+        self._start_line()
+        self._write("}")
+        self.last_element = ElementType.UNION_DECLARATION

@@ -1,7 +1,7 @@
 """
 cfile core
 """
-from typing import Union, Any
+from typing import Any, Self
 
 
 class Element:
@@ -145,7 +145,7 @@ class Type(DataType):
     Data type
     """
     def __init__(self,
-                 base_type: Union[str, "Type"],
+                 base_type: str | Self,
                  const: bool = False,
                  pointer: bool = False,
                  volatile: bool = False,
@@ -231,46 +231,32 @@ class Struct(DataType):
         return member
 
 
-class TypeDef(DataType):
-    """
-    Type definition (typedef)
-    """
-    def __init__(self,
-                 name: str,
-                 base_type: Union[str, "DataType", "Declaration"],
-                 const: bool = False,
-                 pointer: bool = False,
-                 volatile: bool = False,
-                 array: int | None = None) -> None:
-        super().__init__(name)
-        self.const = const
-        self.volatile = volatile
+class UnionMember(Element):
+    def __init__(self, name: str, data_type: DataType, pointer: bool = False, array: int | None = None):
+        self.name = name
+        self.data_type = data_type
         self.pointer = pointer
         self.array = array
-        self.base_type: DataType | Declaration
-        if isinstance(base_type, DataType):
-            self.base_type = base_type
-        elif isinstance(base_type, str):
-            self.base_type = Type(base_type)
-        elif isinstance(base_type, Declaration):
-            if not isinstance(base_type.element, DataType):
-                err_msg = f'base_type: Declaration must declare a type, not {str(type(base_type.element))}'
-            self.base_type = base_type
-        else:
-            err_msg = 'base_type: Invalid type, expected "str" | "DataType" | "Declaration",'
-            err_msg += ' got {str(type(base_type))}'
-            raise TypeError(err_msg)
 
-    def qualifier(self, name) -> bool:
-        """
-        Returns the status of named qualifier
-        """
-        if name == "const":
-            return self.const
-        if name == "volatile":
-            return self.volatile
+
+class Union(DataType):
+    def __init__(self, name: str, members: list[UnionMember] | None = None):
+        self.name = name
+
+        if members == None:
+            self.members = []
+        elif isinstance(members, list):
+            self.members: list[UnionMember] = list(members)
         else:
-            raise KeyError(name)
+            raise TypeError('Invalid argument type for "members"')
+
+    def append(self, member: UnionMember) -> None:
+        """
+        Appends new element to the struct definition
+        """
+        if not isinstance(member, UnionMember):
+            raise TypeError(f'Invalid type, expected "UnionMember", got {str(type(member))}')
+        self.members.append(member)
 
 
 class Variable(Element):
@@ -374,7 +360,7 @@ class Declaration(Element):
     - Function
     """
     def __init__(self,
-                 element: Union[Variable, Function, DataType],
+                 element: Variable | Function | DataType,
                  init_value: Any | None = None) -> None:
         if isinstance(element, (Variable, Function, DataType)):
             self.element = element
@@ -484,7 +470,7 @@ class Sequence:
     A sequence of statements, comments or whitespace
     """
     def __init__(self) -> None:
-        self.elements: list[Union[Comment, Statement, "Sequence"]] = []
+        self.elements: list[Comment | Statement | Self] = []
 
     def __len__(self) -> int:
         return len(self.elements)
@@ -511,3 +497,45 @@ class Block(Sequence):
     """
     A sequence wrapped in braces
     """
+
+class TypeDef(DataType):
+    """
+    Type definition (typedef)
+    """
+
+    def __init__(self,
+                 name: str,
+                 base_type: str | DataType | Declaration,
+                 const: bool = False,
+                 pointer: bool = False,
+                 volatile: bool = False,
+                 array: int | None = None) -> None:
+        super().__init__(name)
+        self.const = const
+        self.volatile = volatile
+        self.pointer = pointer
+        self.array = array
+        self.base_type: DataType | Declaration
+        if isinstance(base_type, DataType):
+            self.base_type = base_type
+        elif isinstance(base_type, str):
+            self.base_type = Type(base_type)
+        elif isinstance(base_type, Declaration):
+            if not isinstance(base_type.element, DataType):
+                err_msg = f'base_type: Declaration must declare a type, not {str(type(base_type.element))}'
+            self.base_type = base_type
+        else:
+            err_msg = 'base_type: Invalid type, expected "str" | "DataType" | "Declaration",'
+            err_msg += ' got {str(type(base_type))}'
+            raise TypeError(err_msg)
+
+    def qualifier(self, name) -> bool:
+        """
+        Returns the status of named qualifier
+        """
+        if name == "const":
+            return self.const
+        if name == "volatile":
+            return self.volatile
+        else:
+            raise KeyError(name)
