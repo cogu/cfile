@@ -123,6 +123,7 @@ class Writer(Formatter):
             "IfndefDirective": self._write_ifndef_directive,
             "EndifDirective": self._write_endif_directive,
             "Extern": self._write_extern,
+            "Switch": self._write_switch,
         }
         self.last_element = ElementType.NONE
 
@@ -182,6 +183,8 @@ class Writer(Formatter):
                 self._start_line()
                 self._write_line_comment(elem)
                 self._eol()
+            elif isinstance(elem, core.Switch):
+                self._write_switch(elem)
             elif isinstance(elem, core.Block):
                 self._start_line()
                 self._write_block(elem)
@@ -709,3 +712,38 @@ class Writer(Formatter):
     def _write_extern(self, elem: core.Extern) -> None:
         self._write(f'extern "{elem.language}"')
         self.last_element = ElementType.DIRECTIVE
+
+    def _write_switch(self, elem: core.Switch):
+        defaultCase = None
+        self._start_line()
+        if type(elem.switchVar) == core.Variable:
+            self._write(f"switch({elem.switchVar.name}){{")
+        else:
+            self._write(f"switch({elem.switchVar}){{")
+        self._eol()
+        self._indent()
+        for case in elem.cases:
+            if not case.cases:
+                if defaultCase == None:
+                    defaultCase = case
+                    continue
+                else:
+                    raise ValueError("Empty case (default) can be defined only once.")
+            firstCase = False
+            for condition in case.cases:
+                if not firstCase:
+                    firstCase = True
+                else:
+                    self._write_line("")
+                    self._eol()
+                self._start_line()
+                self._write(f"case {condition if type(condition) == type(int) else condition.name}:")
+            self._write_block(case)
+        if defaultCase:
+            self._start_line()
+            self._write(f"default:")
+            self._write_block(defaultCase)
+        self._dedent()
+        self._start_line()
+        self._write("}")
+        self._eol()

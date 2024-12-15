@@ -227,3 +227,11 @@ class CFactory:
 
         """New declaration"""
         return core.Declaration(element, init_value)
+
+    def switch_case(self, cases: list[int | core.EnumMember] | None = None) -> core.SwitchCase:
+
+        return core.SwitchCase(cases)
+
+    def switch(self, switchVar: str | core.Variable, cases: list[core.SwitchCase] | None = None) -> core.Switch:
+
+        return core.Switch(switchVar, cases)

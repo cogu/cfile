@@ -511,3 +511,51 @@ class Block(Sequence):
     """
     A sequence wrapped in braces
     """
+class SwitchCase(Block):
+    """
+    A sequence for switch case wrapped in braces
+    """
+
+    def __init__(self, cases: list[int | EnumMember] | None = None):
+        """
+        Empty values means default
+        """
+        super().__init__()
+
+        if cases == None:
+            self.cases = []
+        elif isinstance(cases, list):
+            self.cases: list[int | EnumMember] = list(cases)
+        else:
+            raise TypeError('Invalid argument type for "cases"')
+
+
+class Switch(Element):
+    """
+    A sequence for switch case wrapped in braces
+    """
+
+    def __init__(self, switchVar: str | Variable, cases: list[SwitchCase] | None = None):
+        super().__init__()
+
+        if switchVar == "" or not (isinstance(switchVar, str) or isinstance(switchVar, Variable)):
+            raise ValueError("switchVar cannot be empty and check data type")
+
+        self.switchVar = switchVar
+
+        if cases == None:
+            self.cases = []
+        elif isinstance(cases, list):
+            self.cases: list[SwitchCase] = list(cases)
+        else:
+            raise TypeError('Invalid argument type for "cases"')
+
+    def append(self, case: SwitchCase) -> None:
+        """
+        Appends new element to the conditions definition
+        """
+        if not isinstance(case, SwitchCase):
+            raise TypeError(f'Invalid type, expected "SwitchCase", got {str(type(case))}')
+        self.cases.append(case)
+
+
