@@ -1,7 +1,7 @@
 """
 cfile core
 """
-from typing import Union, Any
+from typing import Any, Self
 
 
 class Element:
@@ -136,7 +136,7 @@ class DataType(Element):
     """
     Base class for all data types
     """
-    def __init__(self, name: str | None) -> None:
+    def __init__(self, name: str = "") -> None:
         self.name = name
 
 
@@ -145,12 +145,12 @@ class Type(DataType):
     Data type
     """
     def __init__(self,
-                 base_type: Union[str, "Type"],
+                 base_type: str | Self,
                  const: bool = False,
                  pointer: bool = False,
                  volatile: bool = False,
                  array: int | None = None) -> None:  # Only used for typedefs to other array types
-        super().__init__(None)
+        super().__init__("")
         self.base_type = base_type
         self.const = const
         self.volatile = volatile
@@ -168,6 +168,54 @@ class Type(DataType):
         else:
             raise KeyError(name)
 
+class EnumMember(Element):
+    """
+    Enum element.
+    """
+
+    def __init__(self,
+                 name: str,
+                 value: int | None) -> None:
+        self.name = name
+        self.value = value
+
+
+class Enum(DataType):
+    """
+    A enum definition
+    """
+
+    def __init__(self, name: str, members: list[EnumMember] | None = None, attributes: list[str] | None = None) -> None:
+        super().__init__(name)
+
+        if members == None:
+            self.members = []
+        elif isinstance(members, list):
+            self.members = list(members)
+            enumValue = -1
+            for enum in self.members:
+                if enum.value == None:
+                    enumValue += 1
+                    enum.value = enumValue
+                else:
+                    enumValue = enum.value
+        else:
+            raise TypeError('Invalid argument type for "members"')
+
+        if attributes == None:
+            self.attributes = []
+        elif isinstance(attributes, list):
+            self.attributes: list[str] = list(attributes)
+        else:
+            raise TypeError('Invalid argument type for "attributes"')
+
+    def append(self, member: EnumMember) -> None:
+        """
+        Appends new element to the struct definition
+        """
+        if not isinstance(member, EnumMember):
+            raise TypeError(f'Invalid type, expected "EnumMember", got {str(type(member))}')
+        self.members.append(member)
 
 class StructMember(Element):
     """
@@ -197,17 +245,22 @@ class Struct(DataType):
     """
     A struct definition
     """
-    def __init__(self, name: str | None, members: StructMember | list[StructMember] | None = None) -> None:
+    def __init__(self, name: str = "", members: list[StructMember] | None = None, attributes: list[str] | None = None) -> None:
         super().__init__(name)
-        self.members: list[StructMember] = []
-        if members is not None:
-            if isinstance(members, StructMember):
-                self.append(members)
-            elif isinstance(members, list):
-                for member in members:
-                    self.append(member)
-            else:
-                raise TypeError('Invalid argument type for "elements"')
+
+        if members == None:
+            self.members = []
+        elif isinstance(members, list):
+            self.members: list[StructMember] = list(members)
+        else:
+            raise TypeError('Invalid argument type for "members"')
+
+        if attributes == None:
+            self.attributes = []
+        elif isinstance(attributes, list):
+            self.attributes: list[str] = list(attributes)
+        else:
+            raise TypeError('Invalid argument type for "attributes"')
 
     def append(self, member: StructMember) -> None:
         """
@@ -231,46 +284,39 @@ class Struct(DataType):
         return member
 
 
-class TypeDef(DataType):
-    """
-    Type definition (typedef)
-    """
-    def __init__(self,
-                 name: str,
-                 base_type: Union[str, "DataType", "Declaration"],
-                 const: bool = False,
-                 pointer: bool = False,
-                 volatile: bool = False,
-                 array: int | None = None) -> None:
-        super().__init__(name)
-        self.const = const
-        self.volatile = volatile
+class UnionMember(Element):
+    def __init__(self, name: str, data_type: DataType, pointer: bool = False, array: int | None = None):
+        self.name = name
+        self.data_type = data_type
         self.pointer = pointer
         self.array = array
-        self.base_type: DataType | Declaration
-        if isinstance(base_type, DataType):
-            self.base_type = base_type
-        elif isinstance(base_type, str):
-            self.base_type = Type(base_type)
-        elif isinstance(base_type, Declaration):
-            if not isinstance(base_type.element, DataType):
-                err_msg = f'base_type: Declaration must declare a type, not {str(type(base_type.element))}'
-            self.base_type = base_type
-        else:
-            err_msg = 'base_type: Invalid type, expected "str" | "DataType" | "Declaration",'
-            err_msg += ' got {str(type(base_type))}'
-            raise TypeError(err_msg)
 
-    def qualifier(self, name) -> bool:
-        """
-        Returns the status of named qualifier
-        """
-        if name == "const":
-            return self.const
-        if name == "volatile":
-            return self.volatile
+
+class Union(DataType):
+    def __init__(self, name: str, members: list[UnionMember] | None = None, attributes: list[str] | None = None):
+        self.name = name
+
+        if members == None:
+            self.members = []
+        elif isinstance(members, list):
+            self.members: list[UnionMember] = list(members)
         else:
-            raise KeyError(name)
+            raise TypeError('Invalid argument type for "members"')
+
+        if attributes == None:
+            self.attributes = []
+        elif isinstance(attributes, list):
+            self.attributes: list[str] = list(attributes)
+        else:
+            raise TypeError('Invalid argument type for "attributes"')
+
+    def append(self, member: UnionMember) -> None:
+        """
+        Appends new element to the struct definition
+        """
+        if not isinstance(member, UnionMember):
+            raise TypeError(f'Invalid type, expected "UnionMember", got {str(type(member))}')
+        self.members.append(member)
 
 
 class Variable(Element):
@@ -322,7 +368,7 @@ class Function(Element):
                  static: bool = False,
                  const: bool = False,  # const function (as seen in C++)
                  extern: bool = False,
-                 params: Variable | list[Variable] | None = None) -> None:
+                 params: list[Variable] | None = None) -> None:
         self.name = name
         self.static = static
         self.const = const
@@ -335,13 +381,11 @@ class Function(Element):
             self.return_type = Type("void")
         else:
             raise TypeError(str(type(return_type)))
-        self.params: list[Variable] = []
-        if params is not None:
-            if isinstance(params, Variable):
-                self.append(params)
-            elif isinstance(params, list):
-                for param in params:
-                    self.append(param)
+
+        if isinstance(params, list):
+            self.params: list[Variable] = list(params)
+        else:
+            raise TypeError('Invalid argument type for "params"')
 
     def append(self, param: Variable) -> "Function":
         """
@@ -374,7 +418,7 @@ class Declaration(Element):
     - Function
     """
     def __init__(self,
-                 element: Union[Variable, Function, DataType],
+                 element: Variable | Function | DataType,
                  init_value: Any | None = None) -> None:
         if isinstance(element, (Variable, Function, DataType)):
             self.element = element
@@ -422,6 +466,8 @@ class FunctionReturn(Element):
             self.expression = "true" if expression else "false"
         elif isinstance(expression, (int, float)):
             self.expression = str(expression)
+        elif isinstance(expression, EnumMember):
+            self.expression = expression.name
         elif isinstance(expression, (str, Element)):
             self.expression = expression
         else:
@@ -484,7 +530,7 @@ class Sequence:
     A sequence of statements, comments or whitespace
     """
     def __init__(self) -> None:
-        self.elements: list[Union[Comment, Statement, "Sequence"]] = []
+        self.elements: list[Comment | Statement | "Sequence"] = []
 
     def __len__(self) -> int:
         return len(self.elements)
@@ -511,3 +557,134 @@ class Block(Sequence):
     """
     A sequence wrapped in braces
     """
+
+
+class Condition(Block):
+    """
+    A sequence for condition wrapped in braces
+    """
+
+    def __init__(self, condition: str):
+        super().__init__()
+        self.condition = condition
+
+
+class Conditions(Element):
+    """
+    A condition wrapped in braces
+    """
+
+    def __init__(self, conditions: list[Condition] | None = None):
+        super().__init__()
+
+        if conditions == None:
+            self.conditions = []
+        elif isinstance(conditions, list):
+            self.conditions: list[Condition] = list(conditions)
+        else:
+            raise TypeError('Invalid argument type for "conditions"')
+
+    def append(self, member: Condition) -> None:
+        """
+        Appends new element to the conditions definition
+        """
+        if not isinstance(member, Condition):
+            raise TypeError(f'Invalid type, expected "Condition", got {str(type(member))}')
+        self.conditions.append(member)
+
+
+class SwitchCase(Block):
+    """
+    A sequence for switch case wrapped in braces
+    """
+
+    def __init__(self, cases: list[int | EnumMember | str] | None = None):
+        """
+        Empty values means default
+        """
+        super().__init__()
+
+        if cases == None:
+            self.cases = []
+        elif isinstance(cases, list):
+            self.cases: list[int | EnumMember | str] = list(cases)
+        else:
+            raise TypeError('Invalid argument type for "cases"')
+
+
+class Switch(Element):
+    """
+    A sequence for switch case wrapped in braces
+    """
+
+    def __init__(self, switchVar: str | Variable, cases: list[SwitchCase] | None = None):
+        super().__init__()
+
+        if switchVar == "" or not (isinstance(switchVar, str) or isinstance(switchVar, Variable)):
+            raise ValueError("switchVar cannot be empty ")
+
+        self.switchVar = switchVar
+
+        if cases == None:
+            self.cases = []
+        elif isinstance(cases, list):
+            self.cases: list[SwitchCase] = list(cases)
+        else:
+            raise TypeError('Invalid argument type for "cases"')
+
+    def append(self, case: SwitchCase) -> None:
+        """
+        Appends new element to the conditions definition
+        """
+        if not isinstance(case, SwitchCase):
+            raise TypeError(f'Invalid type, expected "SwitchCase", got {str(type(case))}')
+        self.cases.append(case)
+
+
+class Break(Element):
+    """
+    Adding break into block
+    """
+
+
+class TypeDef(DataType):
+    """
+    Type definition (typedef)
+    """
+
+    def __init__(self,
+                 name: str,
+                 base_type: str | DataType | Declaration,
+                 const: bool = False,
+                 pointer: bool = False,
+                 volatile: bool = False,
+                 array: int | None = None) -> None:
+        super().__init__(name)
+        self.const = const
+        self.volatile = volatile
+        self.pointer = pointer
+        self.array = array
+        self.base_type: DataType | Declaration
+        if isinstance(base_type, DataType):
+            self.base_type = base_type
+        elif isinstance(base_type, str):
+            self.base_type = Type(base_type)
+        elif isinstance(base_type, Declaration):
+            if not isinstance(base_type.element, DataType):
+                err_msg = f'base_type: Declaration must declare a type, not {str(type(base_type.element))}'
+            self.base_type = base_type
+        else:
+            err_msg = 'base_type: Invalid type, expected "str" | "DataType" | "Declaration",'
+            err_msg += ' got {str(type(base_type))}'
+            raise TypeError(err_msg)
+
+    def qualifier(self, name) -> bool:
+        """
+        Returns the status of named qualifier
+        """
+        if name == "const":
+            return self.const
+        if name == "volatile":
+            return self.volatile
+        else:
+            raise KeyError(name)

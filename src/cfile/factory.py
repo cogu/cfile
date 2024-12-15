@@ -120,7 +120,7 @@ class CFactory:
                  static: bool = False,
                  const: bool = False,  # This is not const of the return type
                  extern: bool = False,
-                 params: core.Variable | list[core.Variable] | None = None) -> core.Function:
+                 params: list[core.Variable] | None = None) -> core.Function:
         """
         New function
         """
@@ -137,9 +137,26 @@ class CFactory:
         """
         return core.Type(type_ref, const, pointer, volatile, array)
 
+    def enum_member(self,
+                    name: str,
+                    value: int | None = None):
+        """
+        New EnumMember
+        """
+        return core.EnumMember(name, value)
+
+    def enum(self,
+             name: str,
+             members: list[core.EnumMember] | None = None,
+             attributes: list[str] | None = None):
+        """
+        New Enum
+        """
+        return core.Enum(name, members, attributes)
+
     def struct_member(self,
                       name: str,
-                      data_type: str | core.Type | core.Struct,
+                      data_type: str | core.DataType,
                       const: bool = False,  # Pointer qualifier only
                       pointer: bool = False,
                       array: int | None = None) -> core.StructMember:
@@ -150,12 +167,13 @@ class CFactory:
 
     def struct(self,
                name: str,
-               members: core.StructMember | list[core.StructMember] | None = None
+               members: list[core.StructMember] | None = None,
+               attributes: list[str] | None = None
                ) -> core.Struct:
         """
         New Struct
         """
-        return core.Struct(name, members)
+        return core.Struct(name, members, attributes)
 
     def variable(self,
                  name: str,
@@ -204,16 +222,15 @@ class CFactory:
 
     def func_call(self,
                   name: str,
-                  args: list[arg_types] | arg_types | None = None) -> core.FunctionCall:
+                  args: list[arg_types] | None = None) -> core.FunctionCall:
         """
         New function call
         """
-        if args is None:
-            return core.FunctionCall(name, None)
-        elif isinstance(args, list):
-            return core.FunctionCall(name, args)
-        else:
-            return core.FunctionCall(name, [args])
+        if isinstance(name, core.Function):
+            if ((isinstance(name.params, list) or isinstance(args, list)) and len(name.params) != len(args)) or ((not name.params or not args) and name.params != args):
+                raise ValueError('Function declaration and function call params doesn\'t matched in size.')
+            name = name.name
+        return core.FunctionCall(name, args)
 
     def func_return(self, expression: int | float | str | core.Element) -> core.FunctionReturn:
         """
@@ -224,6 +241,41 @@ class CFactory:
     def declaration(self,
                     element: Union[core.Variable, core.Function, core.DataType],
                     init_value: Any | None = None) -> core.Declaration:
-
-        """New declaration"""
+        """
+        New declaration
+        """
         return core.Declaration(element, init_value)
+
+    def condition(self, condition: str) -> core.Condition:
+        """
+        New condition
+        """
+        return core.Condition(condition)
+
+    def conditions(self, conditions: list[core.Condition] | None = None) -> core.Conditions:
+        """
+        New condition
+        """
+        return core.Conditions(conditions)
+
+    def switch_case(self, cases: list[int | core.EnumMember | str] | None = None) -> core.SwitchCase:
+
+        return core.SwitchCase(cases)
+
+    def switch(self, switchVar: str | core.Variable, cases: list[core.SwitchCase] | None = None) -> core.Switch:
+
+        return core.Switch(switchVar, cases)
+
+    def union_member(self, name: str, dataType: core.DataType, pointer: bool = False, array: int | None = None) -> core.UnionMember:
+
+        return core.UnionMember(name, dataType, pointer, array)
+
+    def union(self, name: str, members: list[core.UnionMember] | None = None, attributes: list[str] | None = None) -> core.Union:
+
+        return core.Union(name, members, attributes)
+
+    def breakBlock(self) -> core.Break:
+        """
+        Adding break into block
+        """
+        return core.Break()
