@@ -17,17 +17,18 @@ class ElementType(Enum):
     DIRECTIVE = 1
     COMMENT = 2
     TYPE_DECLARATION = 3
-    STRUCT_DECLARATION = 4   # Should this be separate from type declaration?
-    VARIABLE_DECLARATION = 5
-    FUNCTION_DECLARATION = 6
-    TYPEDEF = 7
-    TYPE_INSTANCE = 8
-    STRUCT_INSTANCE = 9
-    VARIABLE_USAGE = 10
-    FUNCTION_CALL = 11
-    STATEMENT = 12
-    BLOCK_START = 13
-    BLOCK_END = 14
+    ENUM_DECLARATION = 4   # Should this be separate from type declaration?
+    STRUCT_DECLARATION = 5   # Should this be separate from type declaration?
+    VARIABLE_DECLARATION = 6
+    FUNCTION_DECLARATION = 7
+    TYPEDEF = 8
+    TYPE_INSTANCE = 9
+    STRUCT_INSTANCE = 10
+    VARIABLE_USAGE = 11
+    FUNCTION_CALL = 12
+    STATEMENT = 13
+    BLOCK_START = 14
+    BLOCK_END = 15
 
 
 class Formatter:
@@ -102,6 +103,7 @@ class Writer(Formatter):
         self.switcher_all = {
             "Type": self._write_base_type,
             "TypeDef": self._write_typedef_usage,
+            "Enum": self._write_enum_usage,
             "Struct": self._write_struct_usage,
             "Variable": self._write_variable_usage,
             "Function": self._write_function_usage,
@@ -280,6 +282,8 @@ class Writer(Formatter):
             self._write_type_declaration(elem.element)
         elif isinstance(elem.element, core.TypeDef):
             self._write_typedef_declaration(elem.element)
+        elif isinstance(elem.element, core.Enum):
+            self._write_enum_declaration(elem.element)
         elif isinstance(elem.element, core.Struct):
             self._write_struct_declaration(elem.element)
         elif isinstance(elem.element, core.Variable):
@@ -314,6 +318,8 @@ class Writer(Formatter):
             self._write(str(value))
         elif isinstance(value, str):
             self._write(f'"{value}"')
+        elif isinstance(value, core.EnumMember):
+            self._write(f'{value.name}')
         else:
             raise NotImplementedError(str(type(value)))
 
@@ -383,6 +389,8 @@ class Writer(Formatter):
             self._write("extern ")
         if isinstance(elem.data_type, core.Type):
             self._write_type_declaration(elem.data_type)
+        elif isinstance(elem.data_type, core.Enum):
+            self._write_enum_usage(elem.data_type)
         elif isinstance(elem.data_type, core.Struct):
             self._write_struct_usage(elem.data_type)
         elif isinstance(elem.data_type, core.Declaration):
@@ -446,6 +454,8 @@ class Writer(Formatter):
             self._write("const ")
         if isinstance(elem.base_type, core.Type):
             self._write_type_declaration(elem.base_type)
+        elif isinstance(elem.base_type, core.Enum):
+            self._write_enum_usage(elem.base_type)
         elif isinstance(elem.base_type, core.Struct):
             self._write_struct_usage(elem.base_type)
         elif isinstance(elem.base_type, core.Declaration):
@@ -507,6 +517,8 @@ class Writer(Formatter):
             self._write("static ")
         if isinstance(elem.return_type, core.Type):
             self._write_type_declaration(elem.return_type)
+        elif isinstance(elem.return_type, core.Enum):
+            self._write_enum_usage(elem.return_type)
         elif isinstance(elem.return_type, core.Struct):
             self._write_struct_usage(elem.return_type)
         else:
@@ -598,6 +610,47 @@ class Writer(Formatter):
                 self._write(", ")
             self._write_expression(arg)
         self._write(")")
+
+    def _write_enum_usage(self, elem: core.Enum) -> None:
+        """
+        Writes enum usage
+        """
+        if not elem.name:
+            raise ValueError("enum doesn't have a name. Did you mean to use a declaration?")
+        self._write(f"enum {elem.name}")
+
+    def _write_enum_declaration(self, elem: core.Enum):
+        """
+        Writes enum declaration
+        """
+        self._write(f"enum {elem.name}")
+        if self.style.brace_wrapping.after_struct:
+            self._eol()
+            self._start_line()
+            self._write("{")
+            self._eol()
+        else:
+            self._write(" {")
+            self._eol()
+        if len(elem.members):
+            self._indent()
+        for member in elem.members:
+            self._start_line()
+            self._write_enum_member(member)
+            self._write(",")
+            self._eol()
+        if len(elem.members):
+            self._dedent()
+        self._start_line()
+        self._write("}")
+        self.last_element = ElementType.ENUM_DECLARATION
+
+    def _write_enum_member(self, elem: core.EnumMember) -> None:
+        """
+        Writes enum member
+        """
+        result = elem.name + " = " + str(elem.value)
+        self._write(result)
 
     def _write_struct_usage(self, elem: core.Struct) -> None:
         """

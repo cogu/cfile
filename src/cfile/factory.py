@@ -137,6 +137,22 @@ class CFactory:
         """
         return core.Type(type_ref, const, pointer, volatile, array)
 
+    def enum_member(self,
+                    name: str,
+                    value: int | None = None):
+        """
+        New EnumMember
+        """
+        return core.EnumMember(name, value)
+
+    def enum(self,
+             name: str,
+             members: list[core.EnumMember] | None = None):
+        """
+        New Enum
+        """
+        return core.Enum(name, members)
+
     def struct_member(self,
                       name: str,
                       data_type: str | core.Type | core.Struct,

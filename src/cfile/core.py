@@ -168,6 +168,47 @@ class Type(DataType):
         else:
             raise KeyError(name)
 
+class EnumMember(Element):
+    """
+    Enum element.
+    """
+
+    def __init__(self,
+                 name: str,
+                 value: int | None) -> None:
+        self.name = name
+        self.value = value
+
+
+class Enum(DataType):
+    """
+    A enum definition
+    """
+
+    def __init__(self, name: str, members: list[EnumMember] | None = None) -> None:
+        super().__init__(name)
+
+        if members == None:
+            self.members = []
+        elif isinstance(members, list):
+            self.members = list(members)
+            enumValue = -1
+            for enum in self.members:
+                if enum.value == None:
+                    enumValue += 1
+                    enum.value = enumValue
+                else:
+                    enumValue = enum.value
+        else:
+            raise TypeError('Invalid argument type for "members"')
+
+    def append(self, member: EnumMember) -> None:
+        """
+        Appends new element to the struct definition
+        """
+        if not isinstance(member, EnumMember):
+            raise TypeError(f'Invalid type, expected "EnumMember", got {str(type(member))}')
+        self.members.append(member)
 
 class StructMember(Element):
     """
@@ -422,6 +463,8 @@ class FunctionReturn(Element):
             self.expression = "true" if expression else "false"
         elif isinstance(expression, (int, float)):
             self.expression = str(expression)
+        elif isinstance(expression, EnumMember):
+            self.expression = expression.name
         elif isinstance(expression, (str, Element)):
             self.expression = expression
         else:
