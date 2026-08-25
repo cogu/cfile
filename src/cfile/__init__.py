@@ -156,7 +156,7 @@ class block:
                item.indent = self.indent+self.innerIndent
             lines.append(str(item))
          text+='\n'.join(lines)+'\n'
-         text+=indentStr+'} %s' % tail
+         text+=indentStr+'}%s' % tail
       else:         
          text='%s{\n' % head
          lines=[]
