@@ -4,7 +4,7 @@ cfile writer
 # pylint: disable=consider-using-with
 from io import StringIO
 from enum import Enum
-from typing import TextIO, Any
+from typing import TextIO, Any, Callable
 from cfile import core
 import cfile.style as c_style
 
@@ -38,7 +38,7 @@ class Formatter:
     def __init__(self, indent_width: int,
                  indentation_char: str) -> None:
         self.file_path: str | None = None
-        self.fh: TextIO | None = None  # pylint: disable=invalid-name
+        self.fh: TextIO = StringIO()  # pylint: disable=invalid-name
         self.indentation_char: str = indentation_char
         self.white_space_char: str = " "
         self.indent_width = indent_width  # Number of characters (spaces) per indendation
@@ -47,28 +47,28 @@ class Formatter:
         self.line_number: int = 0
         self.column: int = 0
 
-    def _str_open(self):
+    def _str_open(self) -> None:
         self.fh = StringIO()
         self.line_number = 1
         self.indentation_level = 0
         self.indentation_str = ""
 
-    def _open(self, file_path: str):
+    def _open(self, file_path: str) -> None:
         self.fh = open(file_path, "w", encoding="utf-8")
         self.file_path = file_path
         self.line_number = 1
         self.indentation_level = 0
         self.indentation_str = ""
 
-    def _close(self):
+    def _close(self) -> None:
         self.fh.close()
 
-    def _indent(self):
+    def _indent(self) -> None:
         self.indentation_level += 1
         self.indentation_str = self.indentation_char * \
             (self.indentation_level * self.indent_width)
 
-    def _dedent(self):
+    def _dedent(self) -> None:
         self.indentation_level -= 1
         if self.indentation_level == 0:
             self.indentation_str = ""
@@ -76,18 +76,18 @@ class Formatter:
             self.indentation_str = self.indentation_char * \
                 (self.indentation_level * self.indent_width)
 
-    def _start_line(self):
+    def _start_line(self) -> None:
         self.fh.write(self.indentation_str)
 
-    def _write(self, text):
+    def _write(self, text: str) -> None:
         self.fh.write(text)
         self.column += len(text)
 
-    def _write_line(self, text):
+    def _write_line(self, text: str) -> None:
         self.fh.write(text)
         self._eol()
 
-    def _eol(self):
+    def _eol(self) -> None:
         self.fh.write("\n")
         self.line_number += 1
         self.column = 0
@@ -100,7 +100,7 @@ class Writer(Formatter):
     def __init__(self, style: c_style.StyleOptions) -> None:
         super().__init__(style.indent_width, style.indent_char)
         self.style = style
-        self.switcher_all = {
+        self.switcher_all: dict[str, Callable[[Any], None]] = {
             "Type": self._write_base_type,
             "TypeDef": self._write_typedef_usage,
             "Struct": self._write_struct_usage,
@@ -128,7 +128,7 @@ class Writer(Formatter):
         }
         self.last_element = ElementType.NONE
 
-    def write_file(self, sequence: core.Sequence, file_path: str):
+    def write_file(self, sequence: core.Sequence, file_path: str) -> None:
         """
         Writes the sequence to file using pre-selected format style
         """
@@ -326,7 +326,10 @@ class Writer(Formatter):
         """
         Writes name of type
         """
-        self._write(elem.base_type)
+        if isinstance(elem.base_type, str):
+            self._write(elem.base_type)
+        else:
+            self._write_base_type(elem.base_type)
 
     def _write_type_declaration(self, elem: core.Type) -> None:
         """
@@ -433,7 +436,7 @@ class Writer(Formatter):
         self._write(result)
         self.last_element = ElementType.VARIABLE_DECLARATION
 
-    def _write_typedef_usage(self, elem: core.TypeDef):
+    def _write_typedef_usage(self, elem: core.TypeDef) -> None:
         """
         Writes typedef usage
         """
@@ -441,7 +444,7 @@ class Writer(Formatter):
             raise ValueError("Typedef without name detected")
         self._write(elem.name)
 
-    def _write_typedef_declaration(self, elem: core.TypeDef):
+    def _write_typedef_declaration(self, elem: core.TypeDef) -> None:
         """
         Writes typedef declaration
         """

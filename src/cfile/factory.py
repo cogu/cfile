@@ -72,19 +72,19 @@ class CFactory:
         """
         return core.IncludeDirective(path_to_file, adjust=adjust)
 
-    def sysinclude(self, path_to_file, adjust: int = 0) -> core.IncludeDirective:
+    def sysinclude(self, path_to_file: str, adjust: int = 0) -> core.IncludeDirective:
         """
         New system-level include directive
         """
         return core.IncludeDirective(path_to_file, system=True, adjust=adjust)
 
-    def ifdef(self, identifier, adjust: int = 0) -> core.IfdefDirective:
+    def ifdef(self, identifier: str, adjust: int = 0) -> core.IfdefDirective:
         """
         New ifdef preprocessor directove
         """
         return core.IfdefDirective(identifier, adjust=adjust)
 
-    def ifndef(self, identifier, adjust: int = 0) -> core.IfndefDirective:
+    def ifndef(self, identifier: str, adjust: int = 0) -> core.IfndefDirective:
         """
         New ifndef preprocessor directove
         """
@@ -139,7 +139,7 @@ class CFactory:
 
     def struct_member(self,
                       name: str,
-                      data_type: str | core.Type | core.Struct,
+                      data_type: str | core.DataType,
                       const: bool = False,  # Pointer qualifier only
                       pointer: bool = False,
                       array: int | None = None) -> core.StructMember:
@@ -159,7 +159,7 @@ class CFactory:
 
     def variable(self,
                  name: str,
-                 data_type: str | core.Type | core.Struct,
+                 data_type: str | core.DataType,
                  const: bool = False,    # Only used as pointer qualifier
                  pointer: bool = False,
                  extern: bool = False,

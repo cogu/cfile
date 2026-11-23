@@ -107,7 +107,7 @@ class Whitespace(Element):
     """
     Whitespace
     """
-    def __init__(self, width) -> None:
+    def __init__(self, width: int) -> None:
         self.width = width
 
 
@@ -123,7 +123,7 @@ class Line(Element):
     """
     Adds a newline once all inner parts have been written
     """
-    def __init__(self, parts: str | Element | list) -> None:
+    def __init__(self, parts: str | Element | list[Any]) -> None:
         if isinstance(parts, (str, Element)):
             self.parts = [parts]
         elif isinstance(parts, list):
@@ -157,7 +157,7 @@ class Type(DataType):
         self.pointer = pointer
         self.array = array
 
-    def qualifier(self, name) -> bool:
+    def qualifier(self, name: str) -> bool:
         """
         Returns the status of named qualifier
         """
@@ -222,7 +222,7 @@ class Struct(DataType):
 
     def make_member(self,
                     name: str,
-                    data_type: str | Type,
+                    data_type: str | DataType,
                     const: bool = False,  # Pointer qualifier only
                     pointer: bool = False,
                     array: int | None = None) -> StructMember:
@@ -264,7 +264,7 @@ class TypeDef(DataType):
             err_msg += ' got {str(type(base_type))}'
             raise TypeError(err_msg)
 
-    def qualifier(self, name) -> bool:
+    def qualifier(self, name: str) -> bool:
         """
         Returns the status of named qualifier
         """
@@ -304,7 +304,7 @@ class Variable(Element):
         else:
             raise TypeError(str(type(data_type)))
 
-    def qualifier(self, name) -> bool:
+    def qualifier(self, name: str) -> bool:
         """
         Returns the status of named qualifier
         """
@@ -363,7 +363,7 @@ class Function(Element):
 
     def make_param(self,
                    name: str,
-                   data_type: str | Type,
+                   data_type: str | DataType,
                    const: bool = False,
                    pointer: bool = False,
                    array: int | None = None) -> "Function":
@@ -448,7 +448,7 @@ class Assignment(Element):
         self.lhs = self._check_and_convert(lhs)
         self.rhs = self._check_and_convert(rhs)
 
-    def _check_and_convert(self, elem: Any):
+    def _check_and_convert(self, elem: Any) -> str | Element:
         if isinstance(elem, bool):
             return "true" if elem else "false"
         elif isinstance(elem, (int, float, str)):
@@ -472,7 +472,7 @@ class Statement(Element):
             parts.append(self._check_and_convert(expression))
         self.parts = tuple(parts)
 
-    def _check_and_convert(self, elem: Any):
+    def _check_and_convert(self, elem: Any) -> str | Element:
         if isinstance(elem, bool):
             return "true" if elem else "false"
         elif isinstance(elem, (int, float, str)):
@@ -514,7 +514,7 @@ class Sequence:
         self.elements.append(elem)
         return self
 
-    def extend(self, seq) -> "Sequence":
+    def extend(self, seq: "Sequence") -> "Sequence":
         """
         Extends this sequence with items from another sequence
         """
