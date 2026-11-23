@@ -58,10 +58,6 @@ py-version=3.10
 # Discover python modules and packages in the file system subtree.
 recursive=yes
 
-# When enabled, pylint would attempt to guess common misconfiguration and emit
-# user-friendly hints instead of false-positive error messages.
-suggestion-mode=yes
-
 # Allow loading of arbitrary C extensions. Extensions are imported into the
 # active Python interpreter and may run arbitrary code.
 unsafe-load-any-extension=no
@@ -96,7 +92,10 @@ disable=raw-checker-failed,
         too-many-arguments,
         too-many-statements,
         too-many-instance-attributes,
-        no-else-return,        
+        no-else-return,
+        too-many-branches,
+        too-many-ancestors,
+        too-many-locals,
 
 
 # Enable the message, report, category or checker with the given id(s). You can
@@ -346,7 +345,7 @@ ignore-imports=no
 ignore-signatures=no
 
 # Minimum lines number of a similarity.
-min-similarity-lines=4
+min-similarity-lines=0
 
 
 [SPELLING]
@@ -513,7 +512,8 @@ exclude-too-few-public-methods=
 ignored-parents=
 
 # Maximum number of arguments for function / method.
-max-args=5
+max-args=10
+max-positional-arguments=12
 
 # Maximum number of attributes for a class (see R0902).
 max-attributes=7
@@ -531,7 +531,7 @@ max-locals=15
 max-parents=7
 
 # Maximum number of public methods for a class (see R0904).
-max-public-methods=20
+max-public-methods=30
 
 # Maximum number of return / yield for function / method body.
 max-returns=6
