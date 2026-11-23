@@ -28,6 +28,7 @@ class ElementType(Enum):
     STATEMENT = 12
     BLOCK_START = 13
     BLOCK_END = 14
+    IF_STATEMENT = 15
 
 
 class Formatter:
@@ -116,6 +117,7 @@ class Writer(Formatter):
             "BlockComment": self._write_block_comment,
             "Block": self._write_block,
             "Statement": self._write_statement,
+            "IfStatement": self._write_if_statement,
             "Line": self._write_line_element,
             "IncludeDirective": self._write_include_directive,
             "DefineDirective": self._write_define_directive,
@@ -315,6 +317,8 @@ class Writer(Formatter):
             self._write(str(value))
         elif isinstance(value, str):
             self._write(f'"{value}"')
+        elif isinstance(value, core.Element):
+            self._write_element(value)
         else:
             raise NotImplementedError(str(type(value)))
 
@@ -579,6 +583,69 @@ class Writer(Formatter):
             self._write(elem)
         else:
             self._write_element(elem)
+
+    def _write_if_statement(self, elem: core.IfStatement) -> None:
+        if len(elem.branches) == 0:
+            raise ValueError("IfStatement has no branches")
+        num_conditions = len(elem.conditions)
+        num_branches = len(elem.branches)
+        for i, branch in enumerate(elem.branches):
+            is_last = i == (num_branches - 1)
+            if i == 0:
+                self._write("if (")
+                self._write_condition(elem.conditions[0])
+                self._write(")")
+            elif i < num_conditions:
+                self._write("else if (")
+                self._write_condition(elem.conditions[i])
+                self._write(")")
+            else:
+                self._write("else")
+
+            if isinstance(branch, core.Block):
+                if self.style.brace_wrapping.after_control_statement:
+                    self._eol()
+                    self._start_line()
+                    self._write("{")
+                    self._eol()
+                else:
+                    self._write(" {")
+                    self._eol()
+                if len(branch.elements):
+                    self._indent()
+                    self._write_sequence(branch)
+                    self._dedent()
+                self._start_line()
+                self._write("}")
+                if is_last or self.style.brace_wrapping.before_else:
+                    self._eol()
+                    if not is_last:
+                        self._start_line()
+                else:
+                    self._write(" ")
+            elif isinstance(branch, core.Statement):
+                self._write(" ")
+                self._write_statement(branch)
+                self._eol()
+                if not is_last:
+                    self._start_line()
+            else:
+                raise NotImplementedError(str(type(branch)))
+        self.last_element = ElementType.IF_STATEMENT
+
+    def _write_condition(self, cond: Any) -> None:
+        if isinstance(cond, core.Sequence):
+            for i, part in enumerate(cond.elements):
+                if i > 0:
+                    self._write(" ")
+                self._write_expression(part)
+        elif isinstance(cond, list):
+            for i, part in enumerate(cond):
+                if i > 0:
+                    self._write(" ")
+                self._write_expression(part)
+        else:
+            self._write_expression(cond)
 
     def _write_assignment(self, elem: core.Assignment) -> None:
         self._write_expression(elem.lhs)

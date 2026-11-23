@@ -53,6 +53,7 @@ class BraceWrapping:
     Individual control of brace wrapping.
     """
     after_case_label: bool = False
+    after_control_statement: bool = False
     after_enum: bool = False
     after_function: bool = False
     after_struct: bool = False
@@ -70,7 +71,7 @@ class BraceWrapping:
         Don't use it with BreakBeforeBraces.CUSTOM.
         """
         if break_before_braces in (BreakBeforeBraces.ALLMAN, BreakBeforeBraces.ALWAYS):
-            wrapping = cls(True, True, True, True, True, True, True, True, True, True)
+            wrapping = cls(True, True, True, True, True, True, True, True, True, True, True)
         elif break_before_braces in (BreakBeforeBraces.ATTACH, BreakBeforeBraces.NEVER, BreakBeforeBraces.LINUX):
             wrapping = cls()
         else:

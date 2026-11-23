@@ -192,6 +192,9 @@ class StructMember(Element):
         else:
             raise TypeError(str(type(data_type)))
 
+    def __str__(self) -> str:
+        return self.name
+
 
 class Struct(DataType):
     """
@@ -272,6 +275,9 @@ class TypeDef(DataType):
         else:
             raise KeyError(name)
 
+    def __str__(self) -> str:
+        return self.name or ""
+
 
 class Variable(Element):
     """
@@ -310,6 +316,9 @@ class Variable(Element):
             return self.extern
         else:
             raise KeyError(name)
+
+    def __str__(self) -> str:
+        return self.name
 
 
 class Function(Element):
@@ -363,6 +372,9 @@ class Function(Element):
         """
         param = Variable(name, data_type, const=const, pointer=pointer, array=array)
         return self.append(param)
+
+    def __str__(self) -> str:
+        return self.name
 
 
 class Declaration(Element):
@@ -483,8 +495,14 @@ class Sequence:
     """
     A sequence of statements, comments or whitespace
     """
-    def __init__(self) -> None:
-        self.elements: list[Union[Comment, Statement, "Sequence"]] = []
+    def __init__(self, elements: Any | list[Any] | None = None) -> None:
+        self.elements: list[Union[Comment, Statement, "Sequence", "IfStatement"]] = []
+        if elements is not None:
+            if isinstance(elements, list):
+                for elem in elements:
+                    self.append(elem)
+            else:
+                self.append(elements)
 
     def __len__(self) -> int:
         return len(self.elements)
@@ -511,3 +529,74 @@ class Block(Sequence):
     """
     A sequence wrapped in braces
     """
+
+
+class IfStatement(Element):
+    """
+    If / else-if / else statement
+    """
+    def __init__(self,
+                 condition: Any | None = None,
+                 branch: Union[Statement, Block, Sequence, None] = None) -> None:
+        self.conditions: list[Any] = []
+        self.branches: list[Union[Statement, Block]] = []
+        if condition is not None or branch is not None:
+            if condition is None or branch is None:
+                raise ValueError("Both condition and branch must be provided when initializing IfStatement")
+            self.append(condition, branch)
+
+    def append(self,
+               condition: Any | None,
+               branch: Union[Statement, Block, Sequence]) -> "IfStatement":
+        """
+        Appends a conditional branch, or a final else branch when condition is None
+        """
+        if len(self.conditions) != len(self.branches):
+            raise RuntimeError("Cannot append branch after a final else branch (condition=None)")
+        if condition is None:
+            if len(self.branches) == 0:
+                raise ValueError("First branch of IfStatement must have a condition")
+        else:
+            self.conditions.append(self._check_and_convert_condition(condition))
+
+        if isinstance(branch, Block):
+            self.branches.append(branch)
+        elif isinstance(branch, Sequence):
+            block = Block()
+            block.extend(branch)
+            self.branches.append(block)
+        elif isinstance(branch, Statement):
+            self.branches.append(branch)
+        else:
+            raise TypeError(f"Expected Statement, Sequence, or Block for branch, got {str(type(branch))}")
+        return self
+
+    def else_if(self,
+                condition: Any,
+                branch: Union[Statement, Block, Sequence]) -> "IfStatement":
+        """
+        Appends an else-if branch
+        """
+        if condition is None:
+            raise ValueError("else_if requires a condition")
+        if len(self.branches) == 0:
+            raise RuntimeError("Cannot call else_if before the initial if branch")
+        return self.append(condition, branch)
+
+    def else_branch(self,
+                    branch: Union[Statement, Block, Sequence]) -> "IfStatement":
+        """
+        Appends the final else branch
+        """
+        return self.append(None, branch)
+
+    def _check_and_convert_condition(self, cond: Any) -> Any:
+        if isinstance(cond, bool):
+            return "true" if cond else "false"
+        if isinstance(cond, (int, float, str)):
+            return str(cond)
+        if isinstance(cond, (Element, Sequence)):
+            return cond
+        if isinstance(cond, (list, tuple)):
+            return [self._check_and_convert_condition(part) for part in cond]
+        raise NotImplementedError(str(type(cond)))

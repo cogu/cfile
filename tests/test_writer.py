@@ -218,6 +218,16 @@ class TestVariableInstance(unittest.TestCase):
         output = writer.write_str_elem(element)
         self.assertEqual(output, "value")
 
+    def test_str_helper_returns_identifier_name(self):
+        var = core.Variable("value", "int")
+        member = core.StructMember("field", "int")
+        func = core.Function("compute", "int")
+        typedef = core.TypeDef("my_int_t", "int")
+        self.assertEqual(f"{var} > 0", "value > 0")
+        self.assertEqual(f"{var}.{member}", "value.field")
+        self.assertEqual(str(func), "compute")
+        self.assertEqual(str(typedef), "my_int_t")
+
 
 class TestVariableDeclaration(unittest.TestCase):
 
@@ -747,6 +757,138 @@ class TestStructReference(unittest.TestCase):
         struct = core.Statement(core.Struct("os_task_tag"))
         writer = cfile.Writer(cfile.StyleOptions())
         self.assertEqual('struct os_task_tag;', writer.write_str_elem(struct))
+
+
+class TestIfStatement(unittest.TestCase):
+
+    def test_single_if_with_statement(self):
+        C = cfile.CFactory()
+        if_stmt = C.if_statement("a > 0", C.statement("a = 0"))
+        writer = cfile.Writer(cfile.StyleOptions())
+        self.assertEqual("if (a > 0) a = 0;", writer.write_str_elem(if_stmt))
+
+    def test_if_else_if_else_with_statements(self):
+        C = cfile.CFactory()
+        if_stmt = (
+            C.if_statement("x == 1", C.statement("y = 10"))
+            .else_if("x == 2", C.statement("y = 20"))
+            .else_branch(C.statement("y = 30"))
+        )
+        writer = cfile.Writer(cfile.StyleOptions())
+        expected = "\n".join([
+            "if (x == 1) y = 10;",
+            "else if (x == 2) y = 20;",
+            "else y = 30;",
+        ])
+        self.assertEqual(expected, writer.write_str_elem(if_stmt))
+
+    def test_if_else_if_else_using_append(self):
+        C = cfile.CFactory()
+        if_stmt = C.if_statement()
+        if_stmt.append("x == 1", C.statement("y = 10"))
+        if_stmt.append("x == 2", C.statement("y = 20"))
+        if_stmt.append(None, C.statement("y = 30"))
+        writer = cfile.Writer(cfile.StyleOptions())
+        expected = "\n".join([
+            "if (x == 1) y = 10;",
+            "else if (x == 2) y = 20;",
+            "else y = 30;",
+        ])
+        self.assertEqual(expected, writer.write_str_elem(if_stmt))
+
+    def test_if_else_if_else_with_sequence_allman(self):
+        C = cfile.CFactory()
+        if_stmt = (
+            C.if_statement("a > 0", C.sequence(C.statement("a = 1")))
+            .else_if("b > 0", C.sequence([C.statement("b = 1"), C.statement("a = 2")]))
+            .else_branch(C.sequence(C.statement("a = 0")))
+        )
+        writer = cfile.Writer(cfile.StyleOptions(break_before_braces=style.BreakBeforeBraces.ALLMAN))
+        expected = "\n".join([
+            "if (a > 0)",
+            "{",
+            "    a = 1;",
+            "}",
+            "else if (b > 0)",
+            "{",
+            "    b = 1;",
+            "    a = 2;",
+            "}",
+            "else",
+            "{",
+            "    a = 0;",
+            "}",
+        ])
+        self.assertEqual(expected, writer.write_str_elem(if_stmt))
+
+    def test_if_else_if_else_with_sequence_attach(self):
+        C = cfile.CFactory()
+        if_stmt = (
+            C.if_statement("a > 0", C.sequence(C.statement("a = 1")))
+            .else_if("b > 0", C.sequence(C.statement("b = 1")))
+            .else_branch(C.sequence(C.statement("a = 0")))
+        )
+        writer = cfile.Writer(cfile.StyleOptions(break_before_braces=style.BreakBeforeBraces.ATTACH))
+        expected = "\n".join([
+            "if (a > 0) {",
+            "    a = 1;",
+            "} else if (b > 0) {",
+            "    b = 1;",
+            "} else {",
+            "    a = 0;",
+            "}",
+        ])
+        self.assertEqual(expected, writer.write_str_elem(if_stmt))
+
+    def test_if_inside_function_body(self):
+        C = cfile.CFactory()
+        code = C.sequence()
+        code.append(C.declaration(C.function("check", "int", params=[C.variable("x", "int")])))
+        body = C.block()
+        body.append(
+            C.if_statement("x > 0", C.sequence(C.statement(C.func_return(1))))
+            .else_branch(C.sequence(C.statement(C.func_return(0))))
+        )
+        code.append(body)
+        writer = cfile.Writer(cfile.StyleOptions(break_before_braces=style.BreakBeforeBraces.ATTACH))
+        expected = "\n".join([
+            "int check(int x) {",
+            "    if (x > 0) {",
+            "        return 1;",
+            "    } else {",
+            "        return 0;",
+            "    }",
+            "}",
+        ])
+        self.assertEqual(expected, writer.write_str(code))
+
+    def test_complex_condition_with_sequence(self):
+        C = cfile.CFactory()
+        j_var = C.variable("j", "int")
+        init_stmt = C.statement(C.declaration(j_var, C.func_call("call_some_function", ["x", "y"])))
+        cond = C.sequence([init_stmt, "j > 0 && j < 24"])
+        if_stmt = C.if_statement(cond, C.sequence(C.statement(C.func_return(j_var))))
+        writer = cfile.Writer(cfile.StyleOptions(break_before_braces=style.BreakBeforeBraces.ATTACH))
+        expected = "\n".join([
+            "if (int j = call_some_function(x, y); j > 0 && j < 24) {",
+            "    return j;",
+            "}",
+        ])
+        self.assertEqual(expected, writer.write_str_elem(if_stmt))
+
+    def test_cannot_append_after_else_branch(self):
+        C = cfile.CFactory()
+        if_stmt = C.if_statement("a > 0", C.statement("a = 1")).else_branch(C.statement("a = 0"))
+        with self.assertRaises(RuntimeError):
+            if_stmt.append("b > 0", C.statement("b = 1"))
+        with self.assertRaises(RuntimeError):
+            if_stmt.else_branch(C.statement("b = 0"))
+
+    def test_first_branch_must_have_condition(self):
+        C = cfile.CFactory()
+        if_stmt = C.if_statement()
+        with self.assertRaises(ValueError):
+            if_stmt.append(None, C.statement("a = 0"))
 
 
 if __name__ == '__main__':

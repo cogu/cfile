@@ -60,11 +60,11 @@ class CFactory:
         """
         return core.BlockComment(text, adjust, width, line_start)
 
-    def sequence(self) -> core.Sequence:
+    def sequence(self, elements: Any | list[Any] | None = None) -> core.Sequence:
         """
         New sequence
         """
-        return core.Sequence()
+        return core.Sequence(elements)
 
     def include(self, path_to_file: str, adjust: int = 0) -> core.IncludeDirective:
         """
@@ -108,11 +108,11 @@ class CFactory:
         """
         return core.Extern(language)
 
-    def block(self) -> core.Block:
+    def block(self, elements: Any | list[Any] | None = None) -> core.Block:
         """
         New block sequence
         """
-        return core.Block()
+        return core.Block(elements)
 
     def function(self,
                  name: str,
@@ -227,3 +227,11 @@ class CFactory:
 
         """New declaration"""
         return core.Declaration(element, init_value)
+
+    def if_statement(self,
+                     condition: Any | None = None,
+                     branch: Union[core.Statement, core.Block, core.Sequence, None] = None) -> core.IfStatement:
+        """
+        New if statement
+        """
+        return core.IfStatement(condition, branch)
