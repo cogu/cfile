@@ -203,7 +203,7 @@ class CFactory:
     arg_types = int | float | str | core.Element
 
     def fn_call(self,
-                name: str,
+                name: str | core.Function,
                 args: list[arg_types] | arg_types | None = None) -> core.FunctionCall:
         """
         New function call
@@ -216,7 +216,7 @@ class CFactory:
             return core.FunctionCall(name, [args])
 
     def func_call(self,
-                  name: str,
+                  name: str | core.Function,
                   args: list[arg_types] | arg_types | None = None) -> core.FunctionCall:
         """
         Alias for fn_call

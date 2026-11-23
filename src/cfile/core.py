@@ -403,8 +403,21 @@ class FunctionCall(Element):
     """
     Function call expression
     """
-    def __init__(self, name: str, args: list[int | float | str | Element] | None = None) -> None:
-        self.name = name
+    def __init__(self,
+                 name: str | Function,
+                 args: list[int | float | str | Element] | None = None) -> None:
+        if isinstance(name, Function):
+            num_given = 0 if args is None else len(args)
+            num_expected = len(name.params)
+            if num_given != num_expected:
+                raise ValueError(
+                    f"Function '{name.name}' expects {num_expected} argument(s), got {num_given}"
+                )
+            self.name = name.name
+        elif isinstance(name, str):
+            self.name = name
+        else:
+            raise TypeError(f'name: Invalid type, expected "str" | "Function", got {str(type(name))}')
         self.args: list[str | Element] = []
         if args is not None:
             for arg in args:

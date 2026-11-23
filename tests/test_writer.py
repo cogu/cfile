@@ -573,6 +573,31 @@ class TestFunctionCall(unittest.TestCase):
         output = writer.write_str_elem(element)
         self.assertEqual(output, "f(i++, enabled)")
 
+    def test_call_using_function_object_no_args(self):
+        C = cfile.CFactory()
+        func = C.function("do_work", "void")
+        element = C.fn_call(func)
+        writer = cfile.Writer(cfile.StyleOptions())
+        self.assertEqual("do_work()", writer.write_str_elem(element))
+
+    def test_call_using_function_object_with_args(self):
+        C = cfile.CFactory()
+        func = C.function("add", "int", params=[C.variable("a", "int"), C.variable("b", "int")])
+        x_var = C.variable("x", "int")
+        element = C.fn_call(func, [x_var, 10])
+        writer = cfile.Writer(cfile.StyleOptions())
+        self.assertEqual("add(x, 10)", writer.write_str_elem(element))
+
+    def test_call_using_function_object_wrong_arg_count_raises(self):
+        C = cfile.CFactory()
+        func = C.function("add", "int", params=[C.variable("a", "int"), C.variable("b", "int")])
+        with self.assertRaises(ValueError):
+            C.fn_call(func)
+        with self.assertRaises(ValueError):
+            C.fn_call(func, 1)
+        with self.assertRaises(ValueError):
+            C.fn_call(func, [1, 2, 3])
+
 
 class TestFunctionReturn(unittest.TestCase):
 
@@ -599,6 +624,15 @@ class TestFunctionReturn(unittest.TestCase):
         writer = cfile.Writer(cfile.StyleOptions())
         output = writer.write_str_elem(element)
         self.assertEqual(output, "return retval")
+
+    def test_fn_call(self):
+        C = cfile.CFactory()
+        a_var = C.variable("a", "int")
+        b_var = C.variable("b", "int")
+        subtract = C.function("subtract", "int", params=[a_var, b_var])
+        stmt = C.statement(C.fn_return(C.fn_call(subtract, [a_var, b_var])))
+        writer = cfile.Writer(cfile.StyleOptions())
+        self.assertEqual("return subtract(a, b);", writer.write_str_elem(stmt))
 
 
 class TestTypedef(unittest.TestCase):
