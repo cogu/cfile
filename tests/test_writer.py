@@ -846,8 +846,8 @@ class TestIfStatement(unittest.TestCase):
         code.append(C.declaration(C.function("check", "int", params=[C.variable("x", "int")])))
         body = C.block()
         body.append(
-            C.if_statement("x > 0", C.sequence(C.statement(C.func_return(1))))
-            .else_branch(C.sequence(C.statement(C.func_return(0))))
+            C.if_statement("x > 0", C.sequence(C.statement(C.fn_return(1))))
+            .else_branch(C.sequence(C.statement(C.fn_return(0))))
         )
         code.append(body)
         writer = cfile.Writer(cfile.StyleOptions(break_before_braces=style.BreakBeforeBraces.ATTACH))
@@ -865,9 +865,9 @@ class TestIfStatement(unittest.TestCase):
     def test_complex_condition_with_sequence(self):
         C = cfile.CFactory()
         j_var = C.variable("j", "int")
-        init_stmt = C.statement(C.declaration(j_var, C.func_call("call_some_function", ["x", "y"])))
+        init_stmt = C.statement(C.declaration(j_var, C.fn_call("call_some_function", ["x", "y"])))
         cond = C.sequence([init_stmt, "j > 0 && j < 24"])
-        if_stmt = C.if_statement(cond, C.sequence(C.statement(C.func_return(j_var))))
+        if_stmt = C.if_statement(cond, C.sequence(C.statement(C.fn_return(j_var))))
         writer = cfile.Writer(cfile.StyleOptions(break_before_braces=style.BreakBeforeBraces.ATTACH))
         expected = "\n".join([
             "if (int j = call_some_function(x, y); j > 0 && j < 24) {",

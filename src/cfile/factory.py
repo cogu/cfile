@@ -202,9 +202,9 @@ class CFactory:
 
     arg_types = int | float | str | core.Element
 
-    def func_call(self,
-                  name: str,
-                  args: list[arg_types] | arg_types | None = None) -> core.FunctionCall:
+    def fn_call(self,
+                name: str,
+                args: list[arg_types] | arg_types | None = None) -> core.FunctionCall:
         """
         New function call
         """
@@ -215,11 +215,25 @@ class CFactory:
         else:
             return core.FunctionCall(name, [args])
 
-    def func_return(self, expression: int | float | str | core.Element) -> core.FunctionReturn:
+    def func_call(self,
+                  name: str,
+                  args: list[arg_types] | arg_types | None = None) -> core.FunctionCall:
+        """
+        Alias for fn_call
+        """
+        return self.fn_call(name, args)
+
+    def fn_return(self, expression: int | float | bool | str | core.Element) -> core.FunctionReturn:
         """
         New return expression
         """
         return core.FunctionReturn(expression)
+
+    def func_return(self, expression: int | float | bool | str | core.Element) -> core.FunctionReturn:
+        """
+        Alias for fn_return
+        """
+        return self.fn_return(expression)
 
     def declaration(self,
                     element: Union[core.Variable, core.Function, core.DataType],
