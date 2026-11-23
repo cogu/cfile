@@ -22,3 +22,16 @@ Running pylint:
 ```bash
 pylint src
 ```
+
+Running mypy:
+
+```bash
+mypy --strict src
+mypy --check-untyped-defs src tests examples dev_utils
+```
+
+Validating examples:
+
+```bash
+./validate_examples.sh
+```
