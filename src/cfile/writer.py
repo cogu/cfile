@@ -134,7 +134,7 @@ class Writer(Formatter):
         self._write_sequence(sequence)
         self._close()
 
-    def write_str(self, sequence: core.Sequence) -> str:
+    def write_str(self, sequence: core.Sequence, trim_end: bool = True) -> str:
         """
         Writes the sequence to string using pre-selected format style
         """
@@ -142,7 +142,8 @@ class Writer(Formatter):
         self._str_open()
         self._write_sequence(sequence)
         assert isinstance(self.fh, StringIO)
-        return self.fh.getvalue()
+        value = self.fh.getvalue()
+        return value.removesuffix("\n") if trim_end else value
 
     def write_str_elem(self, elem: Any, trim_end: bool = True) -> str:
         """

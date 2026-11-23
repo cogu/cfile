@@ -437,7 +437,7 @@ class TestSequence(unittest.TestCase):
         seq.append(core.Statement(core.Declaration(core.Variable("b", core.Type("void", pointer=True), static=True))))
         writer = cfile.Writer(cfile.StyleOptions())
         output = writer.write_str(seq)
-        expected = "static int a;\n" + "static void* b;\n"
+        expected = "static int a;\n" + "static void* b;"
         self.assertEqual(expected, output)
 
     def test_variable_declaration_and_comment_using_line_element(self):
@@ -446,7 +446,7 @@ class TestSequence(unittest.TestCase):
                               core.BlockComment(" Comment ")]))
         writer = cfile.Writer(cfile.StyleOptions())
         output = writer.write_str(seq)
-        expected = "int a; /* Comment */\n"
+        expected = "int a; /* Comment */"
         self.assertEqual(expected, output)
 
     def test_variable_declaration_and_comment_using_python_list(self):
@@ -454,7 +454,7 @@ class TestSequence(unittest.TestCase):
         seq.append([core.Statement(core.Declaration(core.Variable("a", "int"))), core.BlockComment(" Comment ")])
         writer = cfile.Writer(cfile.StyleOptions())
         output = writer.write_str(seq)
-        expected = "int a; /* Comment */\n"
+        expected = "int a; /* Comment */"
         self.assertEqual(expected, output)
 
 
@@ -466,7 +466,7 @@ class TestBlock(unittest.TestCase):
         seq.append(core.Block())
         writer = cfile.Writer(cfile.StyleOptions(break_before_braces=style.BreakBeforeBraces.ALLMAN))
         output = writer.write_str(seq)
-        expected = "\n".join(["void f(void)", "{", "}", ""])
+        expected = "\n".join(["void f(void)", "{", "}"])
         self.assertEqual(expected, output)
 
     def test_attach_brace_to_function(self):
@@ -475,7 +475,7 @@ class TestBlock(unittest.TestCase):
         seq.append(core.Block())
         writer = cfile.Writer(cfile.StyleOptions(break_before_braces=style.BreakBeforeBraces.ATTACH))
         output = writer.write_str(seq)
-        expected = "\n".join(["void f(void) {", "}", ""])
+        expected = "\n".join(["void f(void) {", "}"])
         self.assertEqual(expected, output)
 
     def test_variable_declarations(self):
@@ -496,11 +496,11 @@ class TestBlock(unittest.TestCase):
         seq.append(body)
         allman_writer = cfile.Writer(cfile.StyleOptions(break_before_braces=style.BreakBeforeBraces.ALLMAN))
         output = allman_writer.write_str(seq)
-        expected = "\n".join(["int add(int a, int b)", "{", "    return a + b;", "}", ""])
+        expected = "\n".join(["int add(int a, int b)", "{", "    return a + b;", "}"])
         self.assertEqual(expected, output)
         attach_writer = cfile.Writer(cfile.StyleOptions(break_before_braces=style.BreakBeforeBraces.ATTACH))
         output = attach_writer.write_str(seq)
-        expected = "\n".join(["int add(int a, int b) {", "    return a + b;", "}", ""])
+        expected = "\n".join(["int add(int a, int b) {", "    return a + b;", "}"])
         self.assertEqual(expected, output)
 
     def test_struct_declaration_inside_block(self):
@@ -518,8 +518,7 @@ class TestBlock(unittest.TestCase):
         int first;
         int second;
     };
-}
-"""
+}"""
         self.assertEqual(expected, output)
 
 
@@ -663,8 +662,7 @@ class TestExtern(unittest.TestCase):
 extern "C"
 {
 }
-#endif // __clpusplus
-"""
+#endif // __clpusplus"""
         self.assertEqual(expected, output)
 
 
