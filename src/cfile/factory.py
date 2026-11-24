@@ -269,7 +269,7 @@ class CFactory:  # pylint: disable=too-many-public-methods
 
     def struct_member(self,
                       name: str,
-                      data_type: str | core.DataType,
+                      data_type: str | core.DataType | core.Declaration,
                       const: bool = False,  # Pointer qualifier only
                       pointer: bool = False,
                       array: int | None = None) -> core.StructMember:
@@ -278,7 +278,8 @@ class CFactory:  # pylint: disable=too-many-public-methods
 
         Args:
             name: Field identifier name.
-            data_type: Field data type name or :class:`~cfile.core.DataType`.
+            data_type: Field data type name, :class:`~cfile.core.DataType`, or nested struct/union
+                :class:`~cfile.core.Declaration`.
             const: When ``True`` (with ``pointer=True``), qualifies the pointer as ``* const``.
             pointer: When ``True``, declares the field as a pointer to ``data_type``.
             array: Optional array dimension size (emits ``name[array]``).
@@ -289,7 +290,7 @@ class CFactory:  # pylint: disable=too-many-public-methods
         return core.StructMember(name, data_type, const, pointer, array)
 
     def struct(self,
-               name: str,
+               name: str | None = None,
                members: core.StructMember | list[core.StructMember] | None = None
                ) -> core.Struct:
         """
@@ -300,7 +301,7 @@ class CFactory:  # pylint: disable=too-many-public-methods
         definition with its members.
 
         Args:
-            name: Struct tag name.
+            name: Optional struct tag name (``None`` for an anonymous ``struct``).
             members: Optional single :class:`~cfile.core.StructMember` or list of struct members.
 
         Returns:
@@ -308,9 +309,52 @@ class CFactory:  # pylint: disable=too-many-public-methods
         """
         return core.Struct(name, members)
 
+    def union_member(self,
+                     name: str,
+                     data_type: str | core.DataType | core.Declaration,
+                     const: bool = False,  # Pointer qualifier only
+                     pointer: bool = False,
+                     array: int | None = None) -> core.UnionMember:
+        """
+        Creates a union member field.
+
+        Args:
+            name: Field identifier name.
+            data_type: Field data type name, :class:`~cfile.core.DataType`, or nested struct/union
+                :class:`~cfile.core.Declaration`.
+            const: When ``True`` (with ``pointer=True``), qualifies the pointer as ``* const``.
+            pointer: When ``True``, declares the field as a pointer to ``data_type``.
+            array: Optional array dimension size (emits ``name[array]``).
+
+        Returns:
+            A new :class:`~cfile.core.UnionMember` instance.
+        """
+        return core.UnionMember(name, data_type, const, pointer, array)
+
+    def union(self,
+              name: str | None = None,
+              members: core.StructMember | list[core.StructMember] | None = None
+              ) -> core.Union:
+        """
+        Creates a C ``union`` type entity.
+
+        When used directly in a statement, emits a forward declaration or type reference
+        (``union <name>``). When wrapped in :meth:`declaration`, emits the full union
+        definition with its members.
+
+        Args:
+            name: Optional union tag name (``None`` for an anonymous ``union``).
+            members: Optional single :class:`~cfile.core.UnionMember` / :class:`~cfile.core.StructMember`
+                or list of members.
+
+        Returns:
+            A new :class:`~cfile.core.Union` instance.
+        """
+        return core.Union(name, members)
+
     def variable(self,
                  name: str,
-                 data_type: str | core.DataType,
+                 data_type: str | core.DataType | core.Declaration,
                  const: bool = False,    # Only used as pointer qualifier
                  pointer: bool = False,
                  extern: bool = False,
@@ -325,8 +369,9 @@ class CFactory:  # pylint: disable=too-many-public-methods
 
         Args:
             name: Variable identifier name.
-            data_type: Variable type name or :class:`~cfile.core.DataType` (including
-                :class:`~cfile.core.Type`, :class:`~cfile.core.Struct`, or :class:`~cfile.core.TypeDef`).
+            data_type: Variable type name, :class:`~cfile.core.DataType` (including
+                :class:`~cfile.core.Type`, :class:`~cfile.core.Struct`, :class:`~cfile.core.Union`,
+                or :class:`~cfile.core.TypeDef`), or inline struct/union :class:`~cfile.core.Declaration`.
             const: When ``True`` (with ``pointer=True``), qualifies the pointer itself as ``* const``.
                 To declare a pointer to a ``const`` value (``const int *x``), set ``const=True`` on
                 the ``data_type`` via :meth:`type` instead.

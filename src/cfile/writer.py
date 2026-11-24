@@ -32,6 +32,8 @@ class ElementType(Enum):
     CASE_LABEL = 16
     NAMED_LABEL = 17
     SWITCH_STATEMENT = 18
+    UNION_DECLARATION = 19
+    UNION_INSTANCE = 20
 
 
 class Formatter:
@@ -119,6 +121,7 @@ class Writer(Formatter):
             "Type": self._write_base_type,
             "TypeDef": self._write_typedef_usage,
             "Struct": self._write_struct_usage,
+            "Union": self._write_union_usage,
             "Variable": self._write_variable_usage,
             "Function": self._write_function_usage,
             "Declaration": self._write_declaration,
@@ -395,6 +398,8 @@ class Writer(Formatter):
             self._write_typedef_declaration(elem.element)
         elif isinstance(elem.element, core.Struct):
             self._write_struct_declaration(elem.element)
+        elif isinstance(elem.element, core.Union):
+            self._write_union_declaration(elem.element)
         elif isinstance(elem.element, core.Variable):
             self._write_variable_declaration(elem.element)
         elif isinstance(elem.element, core.Function):
@@ -414,7 +419,15 @@ class Writer(Formatter):
             for i, member in enumerate(value):
                 if i > 0:
                     self._write(", ")
-                self._write_initializer_member(member)
+                self._write_initializer(member)
+            self._write("}")
+        elif isinstance(value, dict):
+            self._write("{")
+            for i, (key, member) in enumerate(value.items()):
+                if i > 0:
+                    self._write(", ")
+                self._write(f".{key}=")
+                self._write_initializer(member)
             self._write("}")
         else:
             self._write_initializer_member(value)
@@ -423,10 +436,12 @@ class Writer(Formatter):
         """
         Writes initializer member
         """
-        if isinstance(value, int):
+        if isinstance(value, bool):
+            self._write("true" if value else "false")
+        elif isinstance(value, (int, float)):
             self._write(str(value))
         elif isinstance(value, str):
-            self._write(f'"{value}"')
+            self._write(value)
         elif isinstance(value, core.Element):
             self._write_element(value)
         else:
@@ -503,6 +518,8 @@ class Writer(Formatter):
             self._write_type_declaration(elem.data_type)
         elif isinstance(elem.data_type, core.Struct):
             self._write_struct_usage(elem.data_type)
+        elif isinstance(elem.data_type, core.Union):
+            self._write_union_usage(elem.data_type)
         elif isinstance(elem.data_type, core.Declaration):
             self._write_declaration(elem.data_type)
         elif isinstance(elem.data_type, core.TypeDef):
@@ -566,8 +583,12 @@ class Writer(Formatter):
             self._write_type_declaration(elem.base_type)
         elif isinstance(elem.base_type, core.Struct):
             self._write_struct_usage(elem.base_type)
+        elif isinstance(elem.base_type, core.Union):
+            self._write_union_usage(elem.base_type)
         elif isinstance(elem.base_type, core.Declaration):
             self._write_declaration(elem.base_type)
+        elif isinstance(elem.base_type, core.TypeDef):
+            self._write_typedef_usage(elem.base_type)
         else:
             raise NotImplementedError(str(type(elem.base_type)))
         result = ""
@@ -627,6 +648,10 @@ class Writer(Formatter):
             self._write_type_declaration(elem.return_type)
         elif isinstance(elem.return_type, core.Struct):
             self._write_struct_usage(elem.return_type)
+        elif isinstance(elem.return_type, core.Union):
+            self._write_union_usage(elem.return_type)
+        elif isinstance(elem.return_type, core.TypeDef):
+            self._write_typedef_usage(elem.return_type)
         else:
             raise NotImplementedError(str(type(elem.return_type)))
         self._write(f" {elem.name}(")
@@ -845,7 +870,7 @@ class Writer(Formatter):
         """
         Writes struct declaration
         """
-        self._write(f"struct {elem.name}")
+        self._write(f"struct {elem.name}" if elem.name else "struct")
         if self.style.brace_wrapping.after_struct:
             self._eol()
             self._start_line()
@@ -867,6 +892,40 @@ class Writer(Formatter):
         self._write("}")
         self.last_element = ElementType.STRUCT_DECLARATION
 
+    def _write_union_usage(self, elem: core.Union) -> None:
+        """
+        Writes union usage
+        """
+        if not elem.name:
+            raise ValueError("union doesn't have a name. Did you mean to use a declaration?")
+        self._write(f"union {elem.name}")
+
+    def _write_union_declaration(self, elem: core.Union) -> None:
+        """
+        Writes union declaration
+        """
+        self._write(f"union {elem.name}" if elem.name else "union")
+        if self.style.brace_wrapping.after_union:
+            self._eol()
+            self._start_line()
+            self._write("{")
+            self._eol()
+        else:
+            self._write(" {")
+            self._eol()
+        if len(elem.members):
+            self._indent()
+        for member in elem.members:
+            self._start_line()
+            self._write_struct_member(member)
+            self._write(";")
+            self._eol()
+        if len(elem.members):
+            self._dedent()
+        self._start_line()
+        self._write("}")
+        self.last_element = ElementType.UNION_DECLARATION
+
     def _write_struct_member(self, elem: core.StructMember) -> None:
         """
         Writes struct member
@@ -875,6 +934,12 @@ class Writer(Formatter):
             self._write_type_declaration(elem.data_type)
         elif isinstance(elem.data_type, core.Struct):
             self._write_struct_usage(elem.data_type)
+        elif isinstance(elem.data_type, core.Union):
+            self._write_union_usage(elem.data_type)
+        elif isinstance(elem.data_type, core.Declaration):
+            self._write_declaration(elem.data_type)
+        elif isinstance(elem.data_type, core.TypeDef):
+            self._write_typedef_usage(elem.data_type)
         else:
             raise NotImplementedError(str(type(elem.data_type)))
         result = ""

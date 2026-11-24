@@ -431,12 +431,18 @@ class TestStatement(unittest.TestCase):
         output = writer.write_str_elem(element)
         self.assertEqual(output, "record_t a = {0, 0};")
 
-    def test_const_str_var_with_str_initializer(self):
+    def test_const_str_var_with_str_literal_initializer(self):
         char_type = core.Type("char", const=True, pointer=True)
-        element = core.Statement(core.Declaration(core.Variable("s", char_type), "Static Text"))
+        element = core.Statement(core.Declaration(core.Variable("s", char_type), core.StringLiteral("Static Text")))
         writer = cfile.Writer(cfile.StyleOptions())
         output = writer.write_str_elem(element)
         self.assertEqual(output, 'const char* s = "Static Text";')
+
+    def test_int_var_with_str_expression_initializer(self):
+        element = core.Statement(core.Declaration(core.Variable("a", "int"), "DEFAULT_VAL"))
+        writer = cfile.Writer(cfile.StyleOptions())
+        output = writer.write_str_elem(element)
+        self.assertEqual(output, "int a = DEFAULT_VAL;")
 
 
 class TestSequence(unittest.TestCase):
@@ -1077,6 +1083,84 @@ class TestFlowControlAndSwitch(unittest.TestCase):
             "}",
         ])
         self.assertEqual(expected_unindented, writer_unindented.write_str_elem(body))
+
+
+class TestUnionAndNestedStructInitializers(unittest.TestCase):
+
+    def test_union_declaration_and_reference(self):
+        C = cfile.CFactory()
+        u = C.union("data_u", members=[
+            C.union_member("i", "int"),
+            C.union_member("f", "float"),
+        ])
+        writer = cfile.Writer()
+        expected_decl = "\n".join([
+            "union data_u",
+            "{",
+            "    int i;",
+            "    float f;",
+            "};",
+        ])
+        self.assertEqual("union data_u;", writer.write_str_elem(C.statement(u)))
+        self.assertEqual(expected_decl, writer.write_str_elem(C.statement(C.declaration(u))))
+        var_stmt = C.statement(C.declaration(C.variable("val", u), {"i": 42}))
+        self.assertEqual("union data_u val = {.i=42};", writer.write_str_elem(var_stmt))
+
+    def test_anonymous_union_variable_declaration(self):
+        C = cfile.CFactory()
+        anon_union = C.union(members=[
+            C.union_member("x", "int"),
+            C.union_member("c", "char", array=4),
+        ])
+        u_var = C.variable("u", C.declaration(anon_union))
+        stmt = C.statement(C.declaration(u_var, [1]))
+        writer = cfile.Writer(cfile.StyleOptions(break_before_braces=style.BreakBeforeBraces.ATTACH))
+        expected = "\n".join([
+            "union {",
+            "    int x;",
+            "    char c[4];",
+            "} u = {1};",
+        ])
+        self.assertEqual(expected, writer.write_str_elem(stmt))
+
+    def test_nested_struct_and_union_with_nested_and_designated_initializers(self):
+        C = cfile.CFactory()
+        addr_struct = C.struct("addr_t", members=[C.struct_member("port", "uint32_t")])
+        in_union = C.union(members=[
+            C.union_member("a8", "uint8_t", array=4),
+            C.union_member("a16", "uint16_t", array=2),
+        ])
+        example = C.struct("example", members=[
+            C.struct_member("addr", C.declaration(addr_struct)),
+            C.struct_member("in_u", C.declaration(in_union)),
+        ])
+        writer = cfile.Writer(cfile.StyleOptions(break_before_braces=style.BreakBeforeBraces.ATTACH))
+        expected_struct = "\n".join([
+            "struct example {",
+            "    struct addr_t {",
+            "        uint32_t port;",
+            "    } addr;",
+            "    union {",
+            "        uint8_t a8[4];",
+            "        uint16_t a16[2];",
+            "    } in_u;",
+            "};",
+        ])
+        self.assertEqual(expected_struct, writer.write_str_elem(C.statement(C.declaration(example))))
+
+        ex_pos = C.statement(C.declaration(C.variable("ex", example), [[80], [[127, 0, 0, 1]]]))
+        self.assertEqual("struct example ex = {{80}, {{127, 0, 0, 1}}};", writer.write_str_elem(ex_pos))
+
+        ex_named = C.statement(
+            C.declaration(
+                C.variable("ex", example),
+                {"addr": {"port": 80}, "in_u": {"a8": [127, 0, 0, 1]}},
+            )
+        )
+        self.assertEqual(
+            "struct example ex = {.addr={.port=80}, .in_u={.a8={127, 0, 0, 1}}};",
+            writer.write_str_elem(ex_named),
+        )
 
 
 if __name__ == '__main__':

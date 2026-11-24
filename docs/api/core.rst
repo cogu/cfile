@@ -34,6 +34,14 @@ Data Types, Structs & Typedefs
    :members:
    :show-inheritance:
 
+.. autoclass:: cfile.core.UnionMember
+   :members:
+   :show-inheritance:
+
+.. autoclass:: cfile.core.Union
+   :members:
+   :show-inheritance:
+
 .. autoclass:: cfile.core.TypeDef
    :members:
    :show-inheritance:

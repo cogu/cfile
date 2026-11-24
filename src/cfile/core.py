@@ -1,7 +1,8 @@
 """
 cfile core
 """
-from typing import Union, Any
+from __future__ import annotations
+from typing import Any
 
 
 class Element:
@@ -152,7 +153,7 @@ class Type(DataType):
     Data type
     """
     def __init__(self,
-                 base_type: Union[str, "Type"],
+                 base_type: str | "Type",
                  const: bool = False,
                  pointer: bool = False,
                  volatile: bool = False,
@@ -184,7 +185,7 @@ class StructMember(Element):
     """
     def __init__(self,
                  name: str,
-                 data_type: DataType | str,
+                 data_type: DataType | str | "Declaration",
                  const: bool = False,    # Pointer qualifier only
                  pointer: bool = False,
                  array: int | None = None) -> None:
@@ -192,10 +193,15 @@ class StructMember(Element):
         self.const = const
         self.pointer = pointer
         self.array = array
+        self.data_type: DataType | Declaration
         if isinstance(data_type, DataType):
             self.data_type = data_type
         elif isinstance(data_type, str):
             self.data_type = Type(data_type)
+        elif isinstance(data_type, Declaration):
+            if not isinstance(data_type.element, DataType):
+                raise TypeError(f"data_type: Declaration must declare a DataType, not {str(type(data_type.element))}")
+            self.data_type = data_type
         else:
             raise TypeError(str(type(data_type)))
 
@@ -207,7 +213,9 @@ class Struct(DataType):
     """
     A struct definition
     """
-    def __init__(self, name: str | None, members: StructMember | list[StructMember] | None = None) -> None:
+    def __init__(self,
+                 name: str | None = None,
+                 members: StructMember | list[StructMember] | None = None) -> None:
         super().__init__(name)
         self.members: list[StructMember] = []
         if members is not None:
@@ -229,7 +237,7 @@ class Struct(DataType):
 
     def make_member(self,
                     name: str,
-                    data_type: str | DataType,
+                    data_type: str | DataType | "Declaration",
                     const: bool = False,  # Pointer qualifier only
                     pointer: bool = False,
                     array: int | None = None) -> StructMember:
@@ -241,13 +249,59 @@ class Struct(DataType):
         return member
 
 
+class UnionMember(StructMember):
+    """
+    Union element
+    """
+
+
+class Union(DataType):
+    """
+    A union definition
+    """
+    def __init__(self,
+                 name: str | None = None,
+                 members: StructMember | list[StructMember] | None = None) -> None:
+        super().__init__(name)
+        self.members: list[StructMember] = []
+        if members is not None:
+            if isinstance(members, StructMember):
+                self.append(members)
+            elif isinstance(members, list):
+                for member in members:
+                    self.append(member)
+            else:
+                raise TypeError('Invalid argument type for "members"')
+
+    def append(self, member: StructMember) -> None:
+        """
+        Appends new element to the union definition
+        """
+        if not isinstance(member, StructMember):
+            raise TypeError(f'Invalid type, expected "StructMember" or "UnionMember", got {str(type(member))}')
+        self.members.append(member)
+
+    def make_member(self,
+                    name: str,
+                    data_type: str | DataType | "Declaration",
+                    const: bool = False,  # Pointer qualifier only
+                    pointer: bool = False,
+                    array: int | None = None) -> UnionMember:
+        """
+        Creates a new UnionMember and appends it to the list of elements
+        """
+        member = UnionMember(name, data_type, const, pointer, array)
+        self.members.append(member)
+        return member
+
+
 class TypeDef(DataType):
     """
     Type definition (typedef)
     """
     def __init__(self,
                  name: str,
-                 base_type: Union[str, "DataType", "Declaration"],
+                 base_type: str | "DataType" | "Declaration",
                  const: bool = False,
                  pointer: bool = False,
                  volatile: bool = False,
@@ -265,6 +319,7 @@ class TypeDef(DataType):
         elif isinstance(base_type, Declaration):
             if not isinstance(base_type.element, DataType):
                 err_msg = f'base_type: Declaration must declare a type, not {str(type(base_type.element))}'
+                raise TypeError(err_msg)
             self.base_type = base_type
         else:
             err_msg = 'base_type: Invalid type, expected "str" | "DataType" | "Declaration",'
@@ -292,7 +347,7 @@ class Variable(Element):
     """
     def __init__(self,
                  name: str,
-                 data_type: str | DataType,
+                 data_type: str | DataType | "Declaration",
                  const: bool = False,    # Only used as pointer qualifier
                  pointer: bool = False,
                  extern: bool = False,
@@ -304,10 +359,15 @@ class Variable(Element):
         self.extern = extern
         self.static = static
         self.array = array
+        self.data_type: DataType | Declaration
         if isinstance(data_type, DataType):
             self.data_type = data_type
         elif isinstance(data_type, str):
             self.data_type = Type(data_type)
+        elif isinstance(data_type, Declaration):
+            if not isinstance(data_type.element, DataType):
+                raise TypeError(f"data_type: Declaration must declare a DataType, not {str(type(data_type.element))}")
+            self.data_type = data_type
         else:
             raise TypeError(str(type(data_type)))
 
@@ -389,11 +449,11 @@ class Declaration(Element):
     A declaration element
     Valid sub-elements:
     - Variable
-    - DataType (including struct)
+    - DataType (including struct and union)
     - Function
     """
     def __init__(self,
-                 element: Union[Variable, Function, DataType],
+                 element: Variable | Function | DataType,
                  init_value: Any | None = None) -> None:
         if isinstance(element, (Variable, Function, DataType)):
             self.element = element
@@ -518,7 +578,7 @@ class Sequence:
     A sequence of statements, comments or whitespace
     """
     def __init__(self, elements: Any | list[Any] | None = None) -> None:
-        self.elements: list[Union[Comment, Statement, "Sequence", "IfStatement"]] = []
+        self.elements: list[Comment | Statement | "Sequence" | "IfStatement"] = []
         if elements is not None:
             if isinstance(elements, list):
                 for elem in elements:
@@ -565,9 +625,9 @@ class IfStatement(Element):
     """
     def __init__(self,
                  condition: Any | None = None,
-                 branch: Union[Statement, Block, Sequence, None] = None) -> None:
+                 branch: Statement | Block | Sequence | None = None) -> None:
         self.conditions: list[Any] = []
-        self.branches: list[Union[Statement, Block]] = []
+        self.branches: list[Statement | Block] = []
         if condition is not None or branch is not None:
             if condition is None or branch is None:
                 raise ValueError("Both condition and branch must be provided when initializing IfStatement")
@@ -575,7 +635,7 @@ class IfStatement(Element):
 
     def append(self,
                condition: Any | None,
-               branch: Union[Statement, Block, Sequence]) -> "IfStatement":
+               branch: Statement | Block | Sequence) -> "IfStatement":
         """
         Appends a conditional branch, or a final ``else`` branch when ``condition`` is ``None``.
 
@@ -610,7 +670,7 @@ class IfStatement(Element):
 
     def else_if(self,
                 condition: Any,
-                branch: Union[Statement, Block, Sequence]) -> "IfStatement":
+                branch: Statement | Block | Sequence) -> "IfStatement":
         """
         Appends an ``else if`` branch.
 
@@ -628,7 +688,7 @@ class IfStatement(Element):
         return self.append(condition, branch)
 
     def else_branch(self,
-                    branch: Union[Statement, Block, Sequence]) -> "IfStatement":
+                    branch: Statement | Block | Sequence) -> "IfStatement":
         """
         Appends the final unconditional ``else`` branch.
 
@@ -721,9 +781,9 @@ class SwitchStatement(Element):
     """
     def __init__(self,
                  expression: Any,
-                 body: Union[Statement, Block, Sequence, None] = None) -> None:
+                 body: Statement | Block | Sequence | None = None) -> None:
         self.expression = self._check_and_convert_expression(expression)
-        self.body: Union[Statement, Block]
+        self.body: Statement | Block
         if body is None:
             self.body = Block()
         elif isinstance(body, Block):
