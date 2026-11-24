@@ -39,6 +39,10 @@ Data Types, Structs & Typedefs
      - Creates a C ``union`` type entity.
    * - :meth:`~cfile.factory.CFactory.union_member`
      - Creates a union member field.
+   * - :meth:`~cfile.factory.CFactory.enum`
+     - Creates a C ``enum`` type entity (with optional ``prefix`` for member names).
+   * - :meth:`~cfile.factory.CFactory.enum_member`
+     - Creates an ``enum`` member constant.
    * - :meth:`~cfile.factory.CFactory.typedef`
      - Creates a ``typedef`` type alias entity.
 

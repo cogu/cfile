@@ -352,6 +352,52 @@ class CFactory:  # pylint: disable=too-many-public-methods
         """
         return core.Union(name, members)
 
+    def enum_member(self,
+                    name: str,
+                    value: int | str | core.Element | None = None,
+                    prefix: str = "") -> core.EnumMember:
+        """
+        Creates an ``enum`` member constant.
+
+        Args:
+            name: Enumerator identifier name (without ``prefix``).
+            value: Optional explicit integer, string expression, or :class:`~cfile.core.Element` value.
+            prefix: Optional prefix prepended to ``name`` when rendered.
+
+        Returns:
+            A new :class:`~cfile.core.EnumMember` instance.
+        """
+        return core.EnumMember(name, value, prefix)
+
+    def enum(self,
+             name: str | None = None,
+             members: (
+                 core.EnumMemberInput
+                 | list[core.EnumMemberInput]
+                 | dict[str, int | str | core.Element | None]
+                 | None
+             ) = None,
+             prefix: str = "") -> core.Enum:
+        """
+        Creates a C ``enum`` type entity.
+
+        When used directly in a statement or variable type, emits ``enum <name>``.
+        When wrapped in :meth:`declaration`, emits the full ``enum`` definition with
+        its enumerator list.
+
+        Args:
+            name: Optional enum tag name (``None`` for an anonymous ``enum``).
+            members: Optional initial enumerator(s). Accepts a single
+                :class:`~cfile.core.EnumMember`, ``str``, or ``(name, value)`` tuple;
+                a list of any of those; or a ``dict`` mapping enumerator names to values.
+            prefix: Optional prefix string automatically prepended to every member's
+                name when declared or referenced.
+
+        Returns:
+            A new :class:`~cfile.core.Enum` instance.
+        """
+        return core.Enum(name, members, prefix)
+
     def variable(self,
                  name: str,
                  data_type: str | core.DataType | core.Declaration,

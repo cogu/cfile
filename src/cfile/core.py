@@ -348,6 +348,129 @@ class Union(DataType):
         return member
 
 
+class EnumMember(Element):
+    """
+    A member constant of a C ``enum``.
+
+    Args:
+        name: Enumerator identifier name (without the parent enum's ``prefix``).
+        value: Optional explicit integer, string expression, or :class:`Element` value.
+        prefix: Optional prefix prepended to ``name`` when rendered (automatically
+            inherited when added to an :class:`Enum`).
+    """
+    def __init__(self,
+                 name: str,
+                 value: int | str | Element | None = None,
+                 prefix: str = "") -> None:
+        self.name = name
+        self.prefix = prefix
+        self.parent: Enum | None = None
+        self.value: str | Element | None
+        if value is None:
+            self.value = None
+        elif isinstance(value, bool):
+            raise TypeError('value: Invalid type "bool" for EnumMember')
+        elif isinstance(value, int):
+            self.value = str(value)
+        elif isinstance(value, (str, Element)):
+            self.value = value
+        else:
+            raise TypeError(f'value: Invalid type, expected "int" | "str" | "Element", got {str(type(value))}')
+
+    @property
+    def full_name(self) -> str:
+        """
+        Returns the effective enumerator identifier including any prefix.
+        """
+        active_prefix = self.parent.prefix if self.parent is not None else self.prefix
+        return f"{active_prefix}{self.name}"
+
+    def __str__(self) -> str:
+        return self.full_name
+
+
+EnumMemberInput = EnumMember | str | tuple[str, int | str | Element | None]
+
+
+class Enum(DataType):
+    """
+    A C ``enum`` type definition or reference.
+
+    Args:
+        name: Optional enum tag name (``None`` for an anonymous ``enum``).
+        members: Optional initial enumerator(s). Accepts a single :class:`EnumMember`,
+            ``str``, or ``(name, value)`` tuple; a list of any of those; or a ``dict``
+            mapping enumerator names to values.
+        prefix: Optional prefix string automatically prepended to every member's name
+            when declared or referenced.
+    """
+    def __init__(self,
+                 name: str | None = None,
+                 members: (
+                     EnumMemberInput
+                     | list[EnumMemberInput]
+                     | dict[str, int | str | Element | None]
+                     | None
+                 ) = None,
+                 prefix: str = "") -> None:
+        super().__init__(name)
+        self.prefix = prefix
+        self.members: list[EnumMember] = []
+        if members is not None:
+            if isinstance(members, dict):
+                for key, val in members.items():
+                    self.make_member(key, val)
+            elif isinstance(members, list):
+                for item in members:
+                    self.append(item)
+            elif isinstance(members, (EnumMember, str, tuple)):
+                self.append(members)
+            else:
+                raise TypeError('Invalid argument type for "members"')
+
+    def append(self, member: EnumMemberInput) -> "Enum":
+        """
+        Appends an enumerator to the enum definition.
+
+        Args:
+            member: An :class:`EnumMember`, a ``str`` name, or a ``(name, value)`` 2-tuple.
+
+        Returns:
+            This :class:`Enum` instance for method chaining.
+        """
+        if isinstance(member, EnumMember):
+            member.parent = self
+            self.members.append(member)
+        elif isinstance(member, str):
+            self.make_member(member)
+        elif isinstance(member, tuple) and len(member) == 2:
+            name, value = member
+            if not isinstance(name, str):
+                raise TypeError(f'Expected "str" for tuple member name, got {str(type(name))}')
+            self.make_member(name, value)
+        else:
+            raise TypeError(f'Invalid type for enum member: {str(type(member))}')
+        return self
+
+    def make_member(self,
+                    name: str,
+                    value: int | str | Element | None = None) -> EnumMember:
+        """
+        Creates a new :class:`EnumMember`, appends it to this enum, and returns it.
+
+        Args:
+            name: Enumerator identifier name (without ``prefix``).
+            value: Optional explicit integer, string expression, or :class:`Element` value.
+
+        Returns:
+            The newly created :class:`EnumMember`.
+        """
+        member = EnumMember(name, value, prefix=self.prefix)
+        member.parent = self
+        self.members.append(member)
+        return member
+
+
 class TypeDef(DataType):
     """
     Type definition (typedef)

@@ -34,6 +34,8 @@ class ElementType(Enum):
     SWITCH_STATEMENT = 18
     UNION_DECLARATION = 19
     UNION_INSTANCE = 20
+    ENUM_DECLARATION = 21
+    ENUM_INSTANCE = 22
 
 
 class Formatter:
@@ -122,6 +124,8 @@ class Writer(Formatter):
             "TypeDef": self._write_typedef_usage,
             "Struct": self._write_struct_usage,
             "Union": self._write_union_usage,
+            "Enum": self._write_enum_usage,
+            "EnumMember": self._write_enum_member_usage,
             "Variable": self._write_variable_usage,
             "Function": self._write_function_usage,
             "Declaration": self._write_declaration,
@@ -400,6 +404,8 @@ class Writer(Formatter):
             self._write_struct_declaration(elem.element)
         elif isinstance(elem.element, core.Union):
             self._write_union_declaration(elem.element)
+        elif isinstance(elem.element, core.Enum):
+            self._write_enum_declaration(elem.element)
         elif isinstance(elem.element, core.Variable):
             self._write_variable_declaration(elem.element)
         elif isinstance(elem.element, core.Function):
@@ -520,6 +526,8 @@ class Writer(Formatter):
             self._write_struct_usage(elem.data_type)
         elif isinstance(elem.data_type, core.Union):
             self._write_union_usage(elem.data_type)
+        elif isinstance(elem.data_type, core.Enum):
+            self._write_enum_usage(elem.data_type)
         elif isinstance(elem.data_type, core.Declaration):
             self._write_declaration(elem.data_type)
         elif isinstance(elem.data_type, core.TypeDef):
@@ -585,6 +593,8 @@ class Writer(Formatter):
             self._write_struct_usage(elem.base_type)
         elif isinstance(elem.base_type, core.Union):
             self._write_union_usage(elem.base_type)
+        elif isinstance(elem.base_type, core.Enum):
+            self._write_enum_usage(elem.base_type)
         elif isinstance(elem.base_type, core.Declaration):
             self._write_declaration(elem.base_type)
         elif isinstance(elem.base_type, core.TypeDef):
@@ -650,6 +660,8 @@ class Writer(Formatter):
             self._write_struct_usage(elem.return_type)
         elif isinstance(elem.return_type, core.Union):
             self._write_union_usage(elem.return_type)
+        elif isinstance(elem.return_type, core.Enum):
+            self._write_enum_usage(elem.return_type)
         elif isinstance(elem.return_type, core.TypeDef):
             self._write_typedef_usage(elem.return_type)
         else:
@@ -926,6 +938,57 @@ class Writer(Formatter):
         self._write("}")
         self.last_element = ElementType.UNION_DECLARATION
 
+    def _write_enum_usage(self, elem: core.Enum) -> None:
+        """
+        Writes enum usage
+        """
+        if not elem.name:
+            raise ValueError("enum doesn't have a name. Did you mean to use a declaration?")
+        self._write(f"enum {elem.name}")
+
+    def _write_enum_member_usage(self, elem: core.EnumMember) -> None:
+        """
+        Writes enum member usage
+        """
+        self._write(elem.full_name)
+
+    def _write_enum_declaration(self, elem: core.Enum) -> None:
+        """
+        Writes enum declaration
+        """
+        self._write(f"enum {elem.name}" if elem.name else "enum")
+        if self.style.brace_wrapping.after_enum:
+            self._eol()
+            self._start_line()
+            self._write("{")
+            self._eol()
+        else:
+            self._write(" {")
+            self._eol()
+        num_members = len(elem.members)
+        if num_members:
+            self._indent()
+        for i, member in enumerate(elem.members):
+            self._start_line()
+            self._write_enum_member_declaration(member)
+            if i < num_members - 1:
+                self._write(",")
+            self._eol()
+        if num_members:
+            self._dedent()
+        self._start_line()
+        self._write("}")
+        self.last_element = ElementType.ENUM_DECLARATION
+
+    def _write_enum_member_declaration(self, elem: core.EnumMember) -> None:
+        """
+        Writes enum member inside an enum declaration
+        """
+        self._write(elem.full_name)
+        if elem.value is not None:
+            self._write(" = ")
+            self._write_expression(elem.value)
+
     def _write_struct_member(self, elem: core.StructMember) -> None:
         """
         Writes struct member
@@ -936,6 +999,8 @@ class Writer(Formatter):
             self._write_struct_usage(elem.data_type)
         elif isinstance(elem.data_type, core.Union):
             self._write_union_usage(elem.data_type)
+        elif isinstance(elem.data_type, core.Enum):
+            self._write_enum_usage(elem.data_type)
         elif isinstance(elem.data_type, core.Declaration):
             self._write_declaration(elem.data_type)
         elif isinstance(elem.data_type, core.TypeDef):

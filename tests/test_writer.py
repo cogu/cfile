@@ -1163,5 +1163,58 @@ class TestUnionAndNestedStructInitializers(unittest.TestCase):
         )
 
 
+class TestEnum(unittest.TestCase):
+
+    def test_enum_declaration_with_prefix_and_member_references(self):
+        C = cfile.CFactory()
+        color_enum = C.enum("color", prefix="COLOR_")
+        red = color_enum.make_member("RED", 0)
+        green = color_enum.make_member("GREEN")
+        blue = color_enum.make_member("BLUE", 10)
+
+        writer = cfile.Writer()
+        expected = "\n".join([
+            "enum color",
+            "{",
+            "    COLOR_RED = 0,",
+            "    COLOR_GREEN,",
+            "    COLOR_BLUE = 10",
+            "};",
+        ])
+        self.assertEqual(expected, writer.write_str_elem(C.statement(C.declaration(color_enum))))
+        self.assertEqual("COLOR_RED", str(red))
+        self.assertEqual("case COLOR_GREEN:", writer.write_str_elem(C.switch_label(green)))
+        var_stmt = C.statement(C.declaration(C.variable("c", color_enum), blue))
+        self.assertEqual("enum color c = COLOR_BLUE;", writer.write_str_elem(var_stmt))
+
+    def test_enum_from_dict_and_list_and_typedef(self):
+        C = cfile.CFactory()
+        state_enum = C.enum(
+            "state_tag",
+            members={"IDLE": 0, "ACTIVE": 1, "ERROR": 255},
+            prefix="STATE_",
+        )
+        state_t = C.typedef("state_t", C.declaration(state_enum))
+        writer = cfile.Writer(cfile.StyleOptions(break_before_braces=style.BreakBeforeBraces.ATTACH))
+        expected = "\n".join([
+            "typedef enum state_tag {",
+            "    STATE_IDLE = 0,",
+            "    STATE_ACTIVE = 1,",
+            "    STATE_ERROR = 255",
+            "} state_t;",
+        ])
+        self.assertEqual(expected, writer.write_str_elem(C.statement(C.declaration(state_t))))
+
+        anon_enum = C.enum(members=["FIRST", ("SECOND", 2), C.enum_member("THIRD")], prefix="E_")
+        expected_anon = "\n".join([
+            "enum {",
+            "    E_FIRST,",
+            "    E_SECOND = 2,",
+            "    E_THIRD",
+            "};",
+        ])
+        self.assertEqual(expected_anon, writer.write_str_elem(C.statement(C.declaration(anon_enum))))
+
+
 if __name__ == '__main__':
     unittest.main()

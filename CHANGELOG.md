@@ -10,6 +10,7 @@ Notable changes.
 * `SwitchStatement` (`C.switch` / `C.switch_statement`), `SwitchLabel` (`C.switch_label`), and `SwitchDefault` (`C.switch_default`)
 * Flow-control statements and labels: `BreakStatement` (`C.break_statement`), `ContinueStatement` (`C.continue_statement`), `GotoStatement` (`C.goto_statement`), `ReturnStatement` (`C.return_statement`), and `NamedLabel` (`C.named_label`)
 * `Union` (`C.union`) and `UnionMember` (`C.union_member`), anonymous structs and unions (`name=None`), and inline nested struct/union declarations
+* `Enum` (`C.enum`) and `EnumMember` (`C.enum_member`) with automatic member `prefix` support
 * Support nested list initializers and named/designated `dict` initializers (`{"x": 1, "y": 2}` -> `{.x=1, .y=2}`) for structs and unions
 * Support passing a `Function` object directly to `FunctionCall` / `C.fn_call` with argument count validation
 * Support `Element` initializers (such as `FunctionCall`) in variable `Declaration`

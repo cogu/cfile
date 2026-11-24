@@ -42,6 +42,14 @@ Data Types, Structs & Typedefs
    :members:
    :show-inheritance:
 
+.. autoclass:: cfile.core.EnumMember
+   :members:
+   :show-inheritance:
+
+.. autoclass:: cfile.core.Enum
+   :members:
+   :show-inheritance:
+
 .. autoclass:: cfile.core.TypeDef
    :members:
    :show-inheritance:
