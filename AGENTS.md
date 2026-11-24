@@ -35,3 +35,7 @@ Validating examples:
 ```bash
 ./validate_examples.sh
 ```
+
+# Changelog
+
+Keep the `[Unreleased]` section in `CHANGELOG.md` updated whenever user-facing features, API changes, or bug fixes are implemented.
