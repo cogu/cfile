@@ -33,5 +33,5 @@ code.append(C.line("}"))
 code.append([C.endif(), C.line_comment(" __cplusplus")])
 code.append([C.endif(), C.line_comment(" " + INCLUDE_GUARD_TEXT)])
 
-writer = cfile.Writer(cfile.StyleOptions())
+writer = cfile.Writer()
 print(writer.write_str(code))

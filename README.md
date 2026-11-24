@@ -20,7 +20,7 @@ main_body = C.block()
 main_body.append(C.statement(C.fn_call("printf", C.str_literal(r"Hello World\n"))))
 main_body.append(C.statement(C.fn_return(0)))
 code.append(main_body)
-writer = cfile.Writer(cfile.StyleOptions())
+writer = cfile.Writer()
 print(writer.write_str(code))
 ```
 
@@ -100,7 +100,7 @@ mystruct = C.struct("mystruct",
 code.append(C.statement(mystruct))  # Forward declaration
 code.append(C.blank())
 code.append(C.statement(C.declaration(mystruct)))  # Struct declaration
-writer = cfile.Writer(cfile.StyleOptions())
+writer = cfile.Writer()
 print(writer.write_str(code))
 ```
 

@@ -11,5 +11,5 @@ code.append(C.statement(C.declaration(var1)))  # int var1;
 code.append(C.statement(C.declaration(var2, 0)))  # int var2 = 0;
 code.append(C.statement(var1))  # var1;
 code.append(C.statement(C.assignment(var1, 0)))  # var1 = 0;
-writer = cfile.Writer(cfile.StyleOptions())
+writer = cfile.Writer()
 print(writer.write_str(code))

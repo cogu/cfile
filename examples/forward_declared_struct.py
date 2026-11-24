@@ -9,5 +9,5 @@ mystruct = C.struct("mystruct",
 code.append(C.statement(mystruct))  # Forward declaration
 code.append(C.blank())
 code.append(C.statement(C.declaration(mystruct)))  # Struct declaration
-writer = cfile.Writer(cfile.StyleOptions())
+writer = cfile.Writer()
 print(writer.write_str(code))

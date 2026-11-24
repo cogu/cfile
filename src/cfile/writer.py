@@ -100,7 +100,9 @@ class Writer(Formatter):
     """
     High level generator
     """
-    def __init__(self, style: c_style.StyleOptions) -> None:
+    def __init__(self, style: c_style.StyleOptions | None = None) -> None:
+        if style is None:
+            style = c_style.StyleOptions()
         super().__init__(style.indent_width, style.indent_char)
         self.style = style
         self.switcher_all: dict[str, Callable[[Any], None]] = {

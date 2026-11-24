@@ -15,7 +15,7 @@ class TestWhitespace(unittest.TestCase):
 
     def test_write_blank(self):
         element = core.Blank()
-        writer = cfile.Writer(cfile.StyleOptions())
+        writer = cfile.Writer()
         output = writer.write_str_elem(element)
         self.assertEqual(output, "")
 
