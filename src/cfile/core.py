@@ -179,9 +179,18 @@ class Type(DataType):
 
 class StructMember(Element):
     """
-    Struct element. This is similar to Variable
-    but doesn't support type qualifier such as static
-    or extern
+    A member field of a C ``struct``.
+
+    Similar to :class:`Variable`, but does not support storage class specifiers
+    such as ``static`` or ``extern``.
+
+    Args:
+        name: Field identifier name.
+        data_type: Field data type name, :class:`DataType`, or inline struct/union
+            :class:`Declaration`.
+        const: When ``True`` (with ``pointer=True``), qualifies the pointer as ``* const``.
+        pointer: When ``True``, declares the field as a pointer to ``data_type``.
+        array: Optional array dimension size (emits ``name[array]``).
     """
     def __init__(self,
                  name: str,
@@ -211,7 +220,11 @@ class StructMember(Element):
 
 class Struct(DataType):
     """
-    A struct definition
+    A C ``struct`` type definition or reference.
+
+    Args:
+        name: Optional struct tag name (``None`` for an anonymous ``struct``).
+        members: Optional single :class:`StructMember` or list of struct members.
     """
     def __init__(self,
                  name: str | None = None,
@@ -229,7 +242,10 @@ class Struct(DataType):
 
     def append(self, member: StructMember) -> None:
         """
-        Appends new element to the struct definition
+        Appends a new member field to the struct definition.
+
+        Args:
+            member: The :class:`StructMember` to append.
         """
         if not isinstance(member, StructMember):
             raise TypeError(f'Invalid type, expected "StructMember", got {str(type(member))}')
@@ -242,7 +258,18 @@ class Struct(DataType):
                     pointer: bool = False,
                     array: int | None = None) -> StructMember:
         """
-        Creates a new StructMember and appends it to the list of elements
+        Creates a new :class:`StructMember` and appends it to this struct.
+
+        Args:
+            name: Field identifier name.
+            data_type: Field data type name, :class:`DataType`, or inline struct/union
+                :class:`Declaration`.
+            const: When ``True`` (with ``pointer=True``), qualifies the pointer as ``* const``.
+            pointer: When ``True``, declares the field as a pointer to ``data_type``.
+            array: Optional array dimension size.
+
+        Returns:
+            The newly created :class:`StructMember`.
         """
         member = StructMember(name, data_type, const, pointer, array)
         self.members.append(member)
@@ -251,13 +278,25 @@ class Struct(DataType):
 
 class UnionMember(StructMember):
     """
-    Union element
+    A member field of a C ``union``.
+
+    Args:
+        name: Field identifier name.
+        data_type: Field data type name, :class:`DataType`, or inline struct/union
+            :class:`Declaration`.
+        const: When ``True`` (with ``pointer=True``), qualifies the pointer as ``* const``.
+        pointer: When ``True``, declares the field as a pointer to ``data_type``.
+        array: Optional array dimension size (emits ``name[array]``).
     """
 
 
 class Union(DataType):
     """
-    A union definition
+    A C ``union`` type definition or reference.
+
+    Args:
+        name: Optional union tag name (``None`` for an anonymous ``union``).
+        members: Optional single :class:`UnionMember` / :class:`StructMember` or list of members.
     """
     def __init__(self,
                  name: str | None = None,
@@ -275,7 +314,10 @@ class Union(DataType):
 
     def append(self, member: StructMember) -> None:
         """
-        Appends new element to the union definition
+        Appends a new member field to the union definition.
+
+        Args:
+            member: The :class:`UnionMember` or :class:`StructMember` to append.
         """
         if not isinstance(member, StructMember):
             raise TypeError(f'Invalid type, expected "StructMember" or "UnionMember", got {str(type(member))}')
@@ -288,7 +330,18 @@ class Union(DataType):
                     pointer: bool = False,
                     array: int | None = None) -> UnionMember:
         """
-        Creates a new UnionMember and appends it to the list of elements
+        Creates a new :class:`UnionMember` and appends it to this union.
+
+        Args:
+            name: Field identifier name.
+            data_type: Field data type name, :class:`DataType`, or inline struct/union
+                :class:`Declaration`.
+            const: When ``True`` (with ``pointer=True``), qualifies the pointer as ``* const``.
+            pointer: When ``True``, declares the field as a pointer to ``data_type``.
+            array: Optional array dimension size.
+
+        Returns:
+            The newly created :class:`UnionMember`.
         """
         member = UnionMember(name, data_type, const, pointer, array)
         self.members.append(member)
