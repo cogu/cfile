@@ -1,6 +1,6 @@
 [project]
 name = "cfile"
-version = "0.5.0a4"
+version = "0.5.0a5"
 description = "A C code generator written in Python 3"
 readme = "README.md"
 requires-python = ">=3.10"
