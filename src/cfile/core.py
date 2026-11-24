@@ -73,7 +73,10 @@ class Extern(Element):
 class Comment(Element):
     """
     Comment base
-    adjust: Adds spaces before comment begins to allow right-adjustment
+
+    Args:
+        text: Comment text as a string or list of strings.
+        adjust: Adds spaces before comment begins to allow right-adjustment.
     """
     def __init__(self, text: str | list[str], adjust: int = 1) -> None:
         self.text = text
@@ -83,10 +86,14 @@ class Comment(Element):
 class BlockComment(Comment):
     """
     Block Comment
-    width: When > 0, sets the number of asterisks used on first and last line.
-           Also puts the text between first and last line.
-    line_start: Combine with width > 0. Puts this string at beginning of each line
-                inside the comment
+
+    Args:
+        text: Comment text as a string or list of strings.
+        adjust: Adds spaces before comment begins to allow right-adjustment.
+        width: When > 0, sets the number of asterisks used on first and last line
+            and places the text between the first and last line.
+        line_start: Combine with width > 0. Puts this string at the beginning of
+            each line inside the comment.
     """
     def __init__(self,
                  text: str | list[str],

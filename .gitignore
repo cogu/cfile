@@ -5,3 +5,4 @@ sandbox/
 usage_tests/
 **/cfile.egg-info/
 **/__pycache__/
+docs/_build/
