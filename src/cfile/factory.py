@@ -21,7 +21,7 @@ types = BuiltInTypes(core.Type("char"),
                      )
 
 
-class CFactory:
+class CFactory:  # pylint: disable=too-many-public-methods
     """
     Factory for the C programming language
     """
@@ -223,17 +223,24 @@ class CFactory:
         """
         return self.fn_call(name, args)
 
-    def fn_return(self, expression: int | float | bool | str | core.Element) -> core.FunctionReturn:
+    def fn_return(self, expression: int | float | bool | str | core.Element | None = None) -> core.FunctionReturn:
         """
         New return expression
         """
         return core.FunctionReturn(expression)
 
-    def func_return(self, expression: int | float | bool | str | core.Element) -> core.FunctionReturn:
+    def func_return(self, expression: int | float | bool | str | core.Element | None = None) -> core.FunctionReturn:
         """
         Alias for fn_return
         """
         return self.fn_return(expression)
+
+    def return_statement(self,
+                         expression: int | float | bool | str | core.Element | None = None) -> core.ReturnStatement:
+        """
+        New return statement
+        """
+        return core.ReturnStatement(expression)
 
     def declaration(self,
                     element: Union[core.Variable, core.Function, core.DataType],
@@ -249,3 +256,55 @@ class CFactory:
         New if statement
         """
         return core.IfStatement(condition, branch)
+
+    def break_statement(self) -> core.BreakStatement:
+        """
+        New break statement
+        """
+        return core.BreakStatement()
+
+    def continue_statement(self) -> core.ContinueStatement:
+        """
+        New continue statement
+        """
+        return core.ContinueStatement()
+
+    def named_label(self, name: str) -> core.NamedLabel:
+        """
+        New named label
+        """
+        return core.NamedLabel(name)
+
+    def goto_statement(self, label: str | core.NamedLabel) -> core.GotoStatement:
+        """
+        New goto statement
+        """
+        return core.GotoStatement(label)
+
+    def switch_label(self, value: int | str | core.Element) -> core.SwitchLabel:
+        """
+        New switch case label
+        """
+        return core.SwitchLabel(value)
+
+    def switch_default(self) -> core.SwitchDefault:
+        """
+        New switch default label
+        """
+        return core.SwitchDefault()
+
+    def switch(self,
+               expression: Any,
+               body: Union[core.Statement, core.Block, core.Sequence, None] = None) -> core.SwitchStatement:
+        """
+        New switch statement
+        """
+        return core.SwitchStatement(expression, body)
+
+    def switch_statement(self,
+                         expression: Any,
+                         body: Union[core.Statement, core.Block, core.Sequence, None] = None) -> core.SwitchStatement:
+        """
+        Alias for switch
+        """
+        return core.SwitchStatement(expression, body)

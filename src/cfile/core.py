@@ -441,9 +441,11 @@ class FunctionReturn(Element):
     Function return expression
     """
     def __init__(self,
-                 expression: int | float | bool | str | Element) -> None:
-        self.expression: str | Element
-        if isinstance(expression, bool):
+                 expression: int | float | bool | str | Element | None = None) -> None:
+        self.expression: str | Element | None
+        if expression is None:
+            self.expression = None
+        elif isinstance(expression, bool):
             self.expression = "true" if expression else "false"
         elif isinstance(expression, (int, float)):
             self.expression = str(expression)
@@ -613,3 +615,98 @@ class IfStatement(Element):
         if isinstance(cond, (list, tuple)):
             return [self._check_and_convert_condition(part) for part in cond]
         raise NotImplementedError(str(type(cond)))
+
+
+class NamedLabel(Element):
+    """
+    Named label for goto statements
+    """
+    def __init__(self, name: str) -> None:
+        self.name = name
+
+    def __str__(self) -> str:
+        return self.name
+
+
+class BreakStatement(Statement):
+    """
+    Break statement
+    """
+    def __init__(self) -> None:
+        super().__init__("break")
+
+
+class ContinueStatement(Statement):
+    """
+    Continue statement
+    """
+    def __init__(self) -> None:
+        super().__init__("continue")
+
+
+class GotoStatement(Statement):
+    """
+    Goto statement
+    """
+    def __init__(self, label: str | NamedLabel) -> None:
+        if not isinstance(label, (str, NamedLabel)):
+            raise TypeError(f'label: Invalid type, expected "str" | "NamedLabel", got {str(type(label))}')
+        super().__init__("goto")
+        self.label = label
+
+
+class ReturnStatement(Statement):
+    """
+    Return statement
+    """
+    def __init__(self,
+                 expression: int | float | bool | str | Element | None = None) -> None:
+        super().__init__(FunctionReturn(expression))
+
+
+class SwitchLabel(Element):
+    """
+    Case label inside a switch statement
+    """
+    def __init__(self, value: int | str | Element) -> None:
+        if isinstance(value, bool) or not isinstance(value, (int, str, Element)):
+            raise TypeError(f'value: Invalid type, expected "int" | "str" | "Element", got {str(type(value))}')
+        self.value: str | Element = str(value) if isinstance(value, int) else value
+
+
+class SwitchDefault(Element):
+    """
+    Default label inside a switch statement
+    """
+
+
+class SwitchStatement(Element):
+    """
+    Switch statement
+    """
+    def __init__(self,
+                 expression: Any,
+                 body: Union[Statement, Block, Sequence, None] = None) -> None:
+        self.expression = self._check_and_convert_expression(expression)
+        self.body: Union[Statement, Block]
+        if body is None:
+            self.body = Block()
+        elif isinstance(body, Block):
+            self.body = body
+        elif isinstance(body, Sequence):
+            block = Block()
+            block.extend(body)
+            self.body = block
+        elif isinstance(body, Statement):
+            self.body = body
+        else:
+            raise TypeError(f"Expected Statement, Sequence, or Block for body, got {str(type(body))}")
+
+    def _check_and_convert_expression(self, expr: Any) -> str | Element:
+        if isinstance(expr, bool):
+            return "true" if expr else "false"
+        if isinstance(expr, (int, float, str)):
+            return str(expr)
+        if isinstance(expr, Element):
+            return expr
+        raise NotImplementedError(str(type(expr)))

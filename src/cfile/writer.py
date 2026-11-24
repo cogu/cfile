@@ -29,6 +29,9 @@ class ElementType(Enum):
     BLOCK_START = 13
     BLOCK_END = 14
     IF_STATEMENT = 15
+    CASE_LABEL = 16
+    NAMED_LABEL = 17
+    SWITCH_STATEMENT = 18
 
 
 class Formatter:
@@ -117,7 +120,15 @@ class Writer(Formatter):
             "BlockComment": self._write_block_comment,
             "Block": self._write_block,
             "Statement": self._write_statement,
+            "BreakStatement": self._write_statement,
+            "ContinueStatement": self._write_statement,
+            "GotoStatement": self._write_statement,
+            "ReturnStatement": self._write_statement,
             "IfStatement": self._write_if_statement,
+            "NamedLabel": self._write_named_label,
+            "SwitchLabel": self._write_switch_label,
+            "SwitchDefault": self._write_switch_default,
+            "SwitchStatement": self._write_switch_statement,
             "Line": self._write_line_element,
             "IncludeDirective": self._write_include_directive,
             "DefineDirective": self._write_define_directive,
@@ -169,7 +180,8 @@ class Writer(Formatter):
         """
         Writes a sequence
         """
-        for elem in sequence.elements:
+        num_elements = len(sequence.elements)
+        for i, elem in enumerate(sequence.elements):
             if isinstance(elem, list):
                 tmp = core.Line(elem)
                 self._start_line()
@@ -185,9 +197,13 @@ class Writer(Formatter):
                 self._start_line()
                 self._write_line_comment(elem)
                 self._eol()
+            elif isinstance(elem, (core.SwitchLabel, core.SwitchDefault)):
+                next_is_block = (i + 1 < num_elements) and isinstance(sequence.elements[i + 1], core.Block)
+                self._write_case_element_in_sequence(elem, next_is_block)
+            elif isinstance(elem, core.NamedLabel):
+                self._write_named_label_in_sequence(elem)
             elif isinstance(elem, core.Block):
-                self._start_line()
-                self._write_block(elem)
+                self._write_block_in_sequence(elem)
             elif isinstance(elem, core.Line):
                 self._start_line()
                 self._write_line_element(elem)
@@ -201,6 +217,62 @@ class Writer(Formatter):
                     raise NotImplementedError(f"Found no writer for element {class_name}")
                 if isinstance(elem, core.Directive):
                     self._eol()
+
+    def _write_case_element_in_sequence(self,
+                                        elem: core.SwitchLabel | core.SwitchDefault,
+                                        next_is_block: bool) -> None:
+        outdented = self.indentation_level > 0
+        if outdented:
+            self._dedent()
+        self._start_line()
+        if isinstance(elem, core.SwitchLabel):
+            self._write_switch_label(elem)
+        else:
+            self._write_switch_default(elem)
+        if outdented:
+            self._indent()
+        attach_case_block = (
+            next_is_block
+            and not self.style.brace_wrapping.after_case_label
+            and not self.style.indent_case_blocks
+        )
+        if not attach_case_block:
+            self._eol()
+
+    def _write_named_label_in_sequence(self, elem: core.NamedLabel) -> None:
+        if not self.style.indent_goto_labels:
+            label_indent = ""
+        else:
+            label_level = max(0, self.indentation_level - 1)
+            label_indent = self.indentation_char * (label_level * self.indent_width)
+        self._write(label_indent)
+        self._write_named_label(elem)
+        self._eol()
+
+    def _write_block_in_sequence(self, elem: core.Block) -> None:
+        if self.last_element == ElementType.CASE_LABEL:
+            if not self.style.brace_wrapping.after_case_label and not self.style.indent_case_blocks:
+                outdented = self.indentation_level > 0
+                if outdented:
+                    self._dedent()
+                self._write(" ")
+                self._write_block(elem)
+                if outdented:
+                    self._indent()
+            elif not self.style.indent_case_blocks:
+                outdented = self.indentation_level > 0
+                if outdented:
+                    self._dedent()
+                self._start_line()
+                self._write_block(elem)
+                if outdented:
+                    self._indent()
+            else:
+                self._start_line()
+                self._write_block(elem)
+        else:
+            self._start_line()
+            self._write_block(elem)
 
     def _write_line_element(self, elem: core.Line) -> None:
         for i, part in enumerate(elem.parts):
@@ -570,6 +642,10 @@ class Writer(Formatter):
         self._eol()
 
     def _write_statement(self, elem: core.Statement) -> None:
+        if isinstance(elem, core.GotoStatement):
+            self._write(f"goto {elem.label};")
+            self.last_element = ElementType.STATEMENT
+            return
         assert len(elem.parts) != 0
         if len(elem.parts) > 1:
             for i, part in enumerate(elem.parts):
@@ -659,8 +735,57 @@ class Writer(Formatter):
         self._write(f'"{elem.text}"')
 
     def _write_func_return(self, elem: core.FunctionReturn) -> None:
-        self._write("return ")
+        if elem.expression is None:
+            self._write("return")
+        else:
+            self._write("return ")
+            self._write_expression(elem.expression)
+
+    def _write_named_label(self, elem: core.NamedLabel) -> None:
+        self._write(f"{elem.name}:")
+        self.last_element = ElementType.NAMED_LABEL
+
+    def _write_switch_label(self, elem: core.SwitchLabel) -> None:
+        self._write("case ")
+        self._write_expression(elem.value)
+        self._write(":")
+        self.last_element = ElementType.CASE_LABEL
+
+    def _write_switch_default(self, elem: core.SwitchDefault) -> None:  # pylint: disable=unused-argument
+        self._write("default:")
+        self.last_element = ElementType.CASE_LABEL
+
+    def _write_switch_statement(self, elem: core.SwitchStatement) -> None:
+        self._write("switch (")
         self._write_expression(elem.expression)
+        self._write(")")
+        if isinstance(elem.body, core.Block):
+            if self.style.brace_wrapping.after_control_statement:
+                self._eol()
+                self._start_line()
+                self._write("{")
+                self._eol()
+            else:
+                self._write(" {")
+                self._eol()
+            if len(elem.body.elements):
+                self._indent()
+                if self.style.indent_case_labels:
+                    self._indent()
+                self._write_sequence(elem.body)
+                if self.style.indent_case_labels:
+                    self._dedent()
+                self._dedent()
+            self._start_line()
+            self._write("}")
+            self._eol()
+        elif isinstance(elem.body, core.Statement):
+            self._write(" ")
+            self._write_statement(elem.body)
+            self._eol()
+        else:
+            raise NotImplementedError(str(type(elem.body)))
+        self.last_element = ElementType.SWITCH_STATEMENT
 
     def _write_func_call(self, elem: core.FunctionCall) -> None:
         self._write(f"{elem.name}(")

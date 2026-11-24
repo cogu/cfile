@@ -925,5 +925,159 @@ class TestIfStatement(unittest.TestCase):
             if_stmt.append(None, C.statement("a = 0"))
 
 
+class TestFlowControlAndSwitch(unittest.TestCase):
+
+    def test_break_continue_goto_and_named_label(self):
+        C = cfile.CFactory()
+        writer = cfile.Writer(cfile.StyleOptions())
+        cleanup = C.named_label("CLEANUP")
+        self.assertEqual("break;", writer.write_str_elem(C.break_statement()))
+        self.assertEqual("continue;", writer.write_str_elem(C.continue_statement()))
+        self.assertEqual("goto CLEANUP;", writer.write_str_elem(C.goto_statement("CLEANUP")))
+        self.assertEqual("goto CLEANUP;", writer.write_str_elem(C.goto_statement(cleanup)))
+        self.assertEqual("CLEANUP:", writer.write_str_elem(cleanup))
+
+    def test_void_return(self):
+        C = cfile.CFactory()
+        writer = cfile.Writer(cfile.StyleOptions())
+        self.assertEqual("return;", writer.write_str_elem(C.statement(C.fn_return())))
+        self.assertEqual("return;", writer.write_str_elem(C.return_statement()))
+        self.assertEqual("return 0;", writer.write_str_elem(C.return_statement(0)))
+
+    def test_switch_allman_default_case_indent(self):
+        C = cfile.CFactory()
+        code = C.sequence()
+        switch_var = C.variable("value", "int")
+        switch_body = C.block([
+            C.switch_label(1),
+            C.break_statement(),
+            C.switch_label(2),
+            C.break_statement(),
+            C.switch_default(),
+            C.goto_statement("CLEANUP"),
+        ])
+        code.append(C.switch(switch_var, switch_body))
+        code.append(C.continue_statement())
+        code.append(C.named_label("CLEANUP"))
+        writer = cfile.Writer(cfile.StyleOptions())
+        expected = "\n".join([
+            "switch (value)",
+            "{",
+            "case 1:",
+            "    break;",
+            "case 2:",
+            "    break;",
+            "default:",
+            "    goto CLEANUP;",
+            "}",
+            "continue;",
+            "CLEANUP:",
+        ])
+        self.assertEqual(expected, writer.write_str(code))
+
+    def test_switch_attach_with_indented_case_labels(self):
+        C = cfile.CFactory()
+        switch_var = C.variable("mode", "int")
+        switch_body = C.sequence([
+            C.switch_label("MODE_A"),
+            C.statement("x = 1"),
+            C.break_statement(),
+            C.switch_default(),
+            C.statement("x = 0"),
+            C.break_statement(),
+        ])
+        stmt = C.switch(switch_var, switch_body)
+        opts = cfile.StyleOptions(
+            break_before_braces=style.BreakBeforeBraces.ATTACH,
+            indent_case_labels=True,
+        )
+        writer = cfile.Writer(opts)
+        expected = "\n".join([
+            "switch (mode) {",
+            "    case MODE_A:",
+            "        x = 1;",
+            "        break;",
+            "    default:",
+            "        x = 0;",
+            "        break;",
+            "}",
+        ])
+        self.assertEqual(expected, writer.write_str_elem(stmt))
+
+    def test_switch_case_blocks_styles(self):
+        C = cfile.CFactory()
+        switch_var = C.variable("x", "int")
+        case_block = C.block([
+            C.statement(C.declaration(C.variable("tmp", "int"), 1)),
+            C.break_statement(),
+        ])
+        stmt = C.switch(switch_var, C.block([C.switch_label(1), case_block]))
+
+        attach_writer = cfile.Writer(cfile.StyleOptions(break_before_braces=style.BreakBeforeBraces.ATTACH))
+        expected_attach = "\n".join([
+            "switch (x) {",
+            "case 1: {",
+            "    int tmp = 1;",
+            "    break;",
+            "}",
+            "}",
+        ])
+        self.assertEqual(expected_attach, attach_writer.write_str_elem(stmt))
+
+        indented_block_writer = cfile.Writer(
+            cfile.StyleOptions(
+                break_before_braces=style.BreakBeforeBraces.ALLMAN,
+                indent_case_blocks=True,
+            )
+        )
+        expected_indented = "\n".join([
+            "switch (x)",
+            "{",
+            "case 1:",
+            "    {",
+            "        int tmp = 1;",
+            "        break;",
+            "    }",
+            "}",
+        ])
+        self.assertEqual(expected_indented, indented_block_writer.write_str_elem(stmt))
+
+    def test_goto_label_indentation_inside_function(self):
+        C = cfile.CFactory()
+        cleanup = C.named_label("CLEANUP")
+        body = C.block([
+            C.if_statement("err", C.block([C.goto_statement(cleanup), C.named_label("INNER")])),
+            cleanup,
+            C.statement(C.fn_return(0)),
+        ])
+        writer_indented = cfile.Writer(cfile.StyleOptions(indent_goto_labels=True))
+        expected_indented = "\n".join([
+            "{",
+            "    if (err)",
+            "    {",
+            "        goto CLEANUP;",
+            "    INNER:",
+            "    }",
+            "CLEANUP:",
+            "    return 0;",
+            "}",
+        ])
+        self.assertEqual(expected_indented, writer_indented.write_str_elem(body))
+
+        writer_unindented = cfile.Writer(cfile.StyleOptions(indent_goto_labels=False))
+        expected_unindented = "\n".join([
+            "{",
+            "    if (err)",
+            "    {",
+            "        goto CLEANUP;",
+            "INNER:",
+            "    }",
+            "CLEANUP:",
+            "    return 0;",
+            "}",
+        ])
+        self.assertEqual(expected_unindented, writer_unindented.write_str_elem(body))
+
+
 if __name__ == '__main__':
     unittest.main()

@@ -102,7 +102,10 @@ class StyleOptions:
                  space_around_pointer_qualifiers: SpaceLocation = SpaceLocation.DEFAULT,
                  type_qualifier_order: list[str] | tuple[str, ...] | None = None,
                  storage_class_order: list[str] | tuple[str, ...] | None = None,
-                 short_functions_on_single_line: ShortFunction = ShortFunction.NEVER) -> None:
+                 short_functions_on_single_line: ShortFunction = ShortFunction.NEVER,
+                 indent_case_labels: bool = False,
+                 indent_case_blocks: bool = False,
+                 indent_goto_labels: bool = True) -> None:
         self.break_before_braces = break_before_braces
         self.indent_width = indent_width
         self.indent_char = indent_char
@@ -122,3 +125,6 @@ class StyleOptions:
         else:
             self.brace_wrapping = BraceWrapping.make(break_before_braces)
         self.short_functions_on_single_line = short_functions_on_single_line
+        self.indent_case_labels = indent_case_labels
+        self.indent_case_blocks = indent_case_blocks
+        self.indent_goto_labels = indent_goto_labels
