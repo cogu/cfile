@@ -36,7 +36,11 @@ class ElementType(Enum):
 
 class Formatter:
     """
-    Low-level generator
+    Low-level text buffer and indentation manager used by :class:`Writer`.
+
+    Args:
+        indent_width: Number of indentation characters per indentation level.
+        indentation_char: Character used for indentation (typically ``" "`` or ``"\\t"``).
     """
     def __init__(self, indent_width: int,
                  indentation_char: str) -> None:
@@ -98,7 +102,13 @@ class Formatter:
 
 class Writer(Formatter):
     """
-    High level generator
+    High-level C code generator that renders a :class:`~cfile.core.Sequence` or
+    single :class:`~cfile.core.Element` into formatted C source code.
+
+    Args:
+        style: Formatting options controlling brace placement, indentation, pointer
+            alignment, and label indentation. When ``None``, a default
+            :class:`~cfile.style.StyleOptions` instance is used.
     """
     def __init__(self, style: c_style.StyleOptions | None = None) -> None:
         if style is None:
@@ -143,7 +153,13 @@ class Writer(Formatter):
 
     def write_file(self, sequence: core.Sequence, file_path: str) -> None:
         """
-        Writes the sequence to file using pre-selected format style
+        Writes a sequence of C code elements to a file on disk using the configured format style.
+
+        The generated file always ends with a trailing newline.
+
+        Args:
+            sequence: The code sequence to render.
+            file_path: Destination file path to write (UTF-8 encoded).
         """
         self._open(file_path)
         self._write_sequence(sequence)
@@ -151,7 +167,17 @@ class Writer(Formatter):
 
     def write_str(self, sequence: core.Sequence, trim_end: bool = True) -> str:
         """
-        Writes the sequence to string using pre-selected format style
+        Writes a sequence of C code elements to a string using the configured format style.
+
+        Args:
+            sequence: The code sequence to render.
+            trim_end: When ``True`` (the default), removes the trailing newline ``"\\n"``
+                at the end of the rendered output so the returned string can be passed
+                directly to ``print()`` without producing an extra blank line. Set to
+                ``False`` to preserve the trailing newline.
+
+        Returns:
+            The rendered C source code as a string.
         """
         assert isinstance(sequence, core.Sequence)
         self._str_open()
@@ -162,7 +188,17 @@ class Writer(Formatter):
 
     def write_str_elem(self, elem: Any, trim_end: bool = True) -> str:
         """
-        Writes single item to string using pre-selected format style
+        Writes a single C code element to a string using the configured format style.
+
+        Args:
+            elem: A single :class:`~cfile.core.Element` or :class:`~cfile.core.Block`
+                to render.
+            trim_end: When ``True`` (the default), removes any trailing newline ``"\\n"``
+                from the end of the rendered element string. Set to ``False`` to preserve
+                the trailing newline.
+
+        Returns:
+            The rendered C element as a string.
         """
         self._str_open()
         self._write_element(elem)

@@ -50,7 +50,20 @@ class ShortFunction(Enum):
 @dataclass
 class BraceWrapping:
     """
-    Individual control of brace wrapping.
+    Individual control of brace wrapping when :attr:`BreakBeforeBraces.CUSTOM` is used.
+
+    Attributes:
+        after_case_label: Wrap brace after a ``case`` or ``default`` label.
+        after_control_statement: Wrap brace after control statements (``if``, ``else``, ``switch``).
+        after_enum: Wrap brace after an ``enum`` declaration.
+        after_function: Wrap brace after a function signature.
+        after_struct: Wrap brace after a ``struct`` declaration.
+        after_union: Wrap brace after a ``union`` declaration.
+        after_extern_block: Wrap brace after an ``extern`` block declaration.
+        before_else: Place ``else`` and ``else if`` on a new line after the preceding closing brace.
+        before_while: Place ``while`` on a new line in a ``do ... while`` loop.
+        indent_braces: Indent the opening and closing braces themselves.
+        split_empty_funcion: Split empty function body braces across two lines.
     """
     after_case_label: bool = False
     after_control_statement: bool = False
@@ -67,8 +80,15 @@ class BraceWrapping:
     @classmethod
     def make(cls, break_before_braces: BreakBeforeBraces) -> "BraceWrapping":
         """
-        Utility function for auto-populating settings based on BreakBeforeBraces option.
-        Don't use it with BreakBeforeBraces.CUSTOM.
+        Auto-populates brace wrapping settings based on a :class:`BreakBeforeBraces` preset.
+
+        Do not use this method with :attr:`BreakBeforeBraces.CUSTOM`.
+
+        Args:
+            break_before_braces: The brace breaking preset to expand.
+
+        Returns:
+            A populated :class:`BraceWrapping` instance.
         """
         if break_before_braces in (BreakBeforeBraces.ALLMAN, BreakBeforeBraces.ALWAYS):
             wrapping = cls(True, True, True, True, True, True, True, True, True, True, True)
@@ -87,11 +107,32 @@ _default_storage_class_order = ['static', 'extern', 'object']
 
 class StyleOptions:
     """
-    Format style options
+    Formatting style options for :class:`~cfile.writer.Writer`.
 
-    Default format style:
-    * Indentation: 4 spaces
-    * Always break for spaces (ALLMAN style)
+    Args:
+        break_before_braces: Preset brace breaking style (defaults to
+            :attr:`BreakBeforeBraces.ALLMAN`).
+        indent_width: Number of indentation characters per level (defaults to ``4``).
+        indent_char: Character used for indentation (defaults to ``" "``).
+        brace_wrapping: Custom :class:`BraceWrapping` configuration (only used when
+            ``break_before_braces`` is :attr:`BreakBeforeBraces.CUSTOM`).
+        pointer_alignment: Placement of ``*`` in pointer declarations
+            (:attr:`Alignment.LEFT`, :attr:`Alignment.RIGHT`, or :attr:`Alignment.MIDDLE`).
+        space_around_pointer_qualifiers: Placement of spaces around pointer qualifiers
+            such as ``* const``.
+        type_qualifier_order: Order of type qualifiers relative to ``"type"``
+            (defaults to ``['const', 'volatile', 'type']``).
+        storage_class_order: Order of storage class specifiers relative to ``"object"``
+            (defaults to ``['static', 'extern', 'object']``).
+        short_functions_on_single_line: Controls when short or empty functions are
+            placed on a single line.
+        indent_case_labels: When ``True``, indents ``case`` and ``default`` labels one
+            level inside a ``switch`` block (defaults to ``False``).
+        indent_case_blocks: When ``True``, indents a ``{ ... }`` block following a
+            ``case`` label one level deeper than the label (defaults to ``False``).
+        indent_goto_labels: When ``True`` (the default), outdents named ``goto`` labels
+            by one level relative to surrounding statements; when ``False``, places them
+            at column 0.
     """
     def __init__(self,
                  break_before_braces: BreakBeforeBraces = BreakBeforeBraces.ALLMAN,

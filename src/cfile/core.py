@@ -555,7 +555,13 @@ class Block(Sequence):
 
 class IfStatement(Element):
     """
-    If / else-if / else statement
+    If / else-if / else statement.
+
+    Args:
+        condition: Optional initial ``if`` condition expression (or :class:`Sequence`
+            of condition parts).
+        branch: Optional initial ``if`` branch (:class:`Statement` for an unbraced
+            single-line branch, or :class:`Sequence` / :class:`Block` for a braced block).
     """
     def __init__(self,
                  condition: Any | None = None,
@@ -571,7 +577,16 @@ class IfStatement(Element):
                condition: Any | None,
                branch: Union[Statement, Block, Sequence]) -> "IfStatement":
         """
-        Appends a conditional branch, or a final else branch when condition is None
+        Appends a conditional branch, or a final ``else`` branch when ``condition`` is ``None``.
+
+        Args:
+            condition: Condition expression for an ``if`` or ``else if`` branch, or ``None``
+                for the unconditional final ``else`` branch.
+            branch: Branch body (:class:`Statement`, :class:`Sequence`, or :class:`Block`).
+                A :class:`Sequence` is automatically converted into a braced :class:`Block`.
+
+        Returns:
+            This :class:`IfStatement` instance for method chaining.
         """
         if len(self.conditions) != len(self.branches):
             raise RuntimeError("Cannot append branch after a final else branch (condition=None)")
@@ -597,7 +612,14 @@ class IfStatement(Element):
                 condition: Any,
                 branch: Union[Statement, Block, Sequence]) -> "IfStatement":
         """
-        Appends an else-if branch
+        Appends an ``else if`` branch.
+
+        Args:
+            condition: Condition expression for the ``else if`` branch.
+            branch: Branch body (:class:`Statement`, :class:`Sequence`, or :class:`Block`).
+
+        Returns:
+            This :class:`IfStatement` instance for method chaining.
         """
         if condition is None:
             raise ValueError("else_if requires a condition")
@@ -608,7 +630,13 @@ class IfStatement(Element):
     def else_branch(self,
                     branch: Union[Statement, Block, Sequence]) -> "IfStatement":
         """
-        Appends the final else branch
+        Appends the final unconditional ``else`` branch.
+
+        Args:
+            branch: Branch body (:class:`Statement`, :class:`Sequence`, or :class:`Block`).
+
+        Returns:
+            This :class:`IfStatement` instance for method chaining.
         """
         return self.append(None, branch)
 
