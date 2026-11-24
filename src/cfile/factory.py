@@ -117,7 +117,7 @@ class CFactory:  # pylint: disable=too-many-public-methods
         """
         return core.IncludeDirective(path_to_file, adjust=adjust)
 
-    def sysinclude(self, path_to_file: str, adjust: int = 0) -> core.IncludeDirective:
+    def sys_include(self, path_to_file: str, adjust: int = 0) -> core.IncludeDirective:
         """
         Creates a system ``#include <path/to/file.h>`` preprocessor directive.
 
@@ -129,6 +129,19 @@ class CFactory:  # pylint: disable=too-many-public-methods
             A new :class:`~cfile.core.IncludeDirective` instance with ``system=True``.
         """
         return core.IncludeDirective(path_to_file, system=True, adjust=adjust)
+
+    def sysinclude(self, path_to_file: str, adjust: int = 0) -> core.IncludeDirective:
+        """
+        Alias for :meth:`sys_include`.
+
+        Args:
+            path_to_file: System header path to include in angle brackets.
+            adjust: Number of spaces between ``#`` and ``include``.
+
+        Returns:
+            A new :class:`~cfile.core.IncludeDirective` instance with ``system=True``.
+        """
+        return self.sys_include(path_to_file, adjust=adjust)
 
     def ifdef(self, identifier: str, adjust: int = 0) -> core.IfdefDirective:
         """

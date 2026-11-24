@@ -18,7 +18,7 @@ The following example creates a ``main`` function that prints ``Hello World\n`` 
 
     C = cfile.CFactory()
     code = C.sequence()
-    code.append(C.sysinclude("stdio.h"))
+    code.append(C.sys_include("stdio.h"))
     code.append(C.blank())
 
     char_ptr_type = C.type("char", pointer=True)

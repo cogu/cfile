@@ -16,7 +16,7 @@ Notable changes.
 
 ### Changed
 
-* Rename `func_call` to `fn_call` and `func_return` to `fn_return` (keeping old names as aliases)
+* Rename `func_call` to `fn_call`, `func_return` to `fn_return`, and `sysinclude` to `sys_include` (keeping old names as aliases)
 * Make `StyleOptions` optional when initializing `Writer` (defaults to `StyleOptions()`)
 * Make `expression` optional in `FunctionReturn` / `C.fn_return` to support void `return`
 * Allow `Sequence` and `Block` (`C.sequence` and `C.block`) to accept optional initial element(s)

@@ -123,7 +123,7 @@ Preprocessor Directives
      - Description
    * - :meth:`~cfile.factory.CFactory.include`
      - Creates a local ``#include "path/to/file.h"`` directive.
-   * - :meth:`~cfile.factory.CFactory.sysinclude`
+   * - :meth:`~cfile.factory.CFactory.sys_include`
      - Creates a system ``#include <path/to/file.h>`` directive.
    * - :meth:`~cfile.factory.CFactory.define`
      - Creates a ``#define <left> [right]`` directive.
