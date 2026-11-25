@@ -133,6 +133,10 @@ Preprocessor Directives
      - Creates a custom preprocessor directive (``#<text>``).
    * - :meth:`~cfile.factory.CFactory.include_directive`
      - Creates an ``#include "path"`` or ``#include <path>`` directive (via ``sys=True``).
+   * - :meth:`~cfile.factory.CFactory.include_next_directive`
+     - Creates an ``#include_next "path"`` or ``#include_next <path>`` directive (via ``sys=True``).
+   * - :meth:`~cfile.factory.CFactory.embed_directive`
+     - Creates a C23 ``#embed "path"`` or ``#embed <path>`` directive with optional parameters.
    * - :meth:`~cfile.factory.CFactory.define_directive`
      - Creates a ``#define <left> [right]`` directive.
    * - :meth:`~cfile.factory.CFactory.undef_directive`
@@ -145,6 +149,10 @@ Preprocessor Directives
      - Creates an ``#ifndef <identifier>`` directive.
    * - :meth:`~cfile.factory.CFactory.elif_directive`
      - Creates an ``#elif <expression>`` directive.
+   * - :meth:`~cfile.factory.CFactory.elifdef_directive`
+     - Creates a C23 ``#elifdef <identifier>`` directive.
+   * - :meth:`~cfile.factory.CFactory.elifndef_directive`
+     - Creates a C23 ``#elifndef <identifier>`` directive.
    * - :meth:`~cfile.factory.CFactory.else_directive`
      - Creates an ``#else`` directive.
    * - :meth:`~cfile.factory.CFactory.endif_directive`
@@ -153,6 +161,8 @@ Preprocessor Directives
      - Creates a ``#line <number> ["<filename>"]`` directive.
    * - :meth:`~cfile.factory.CFactory.error_directive`
      - Creates an ``#error [message]`` directive.
+   * - :meth:`~cfile.factory.CFactory.warning_directive`
+     - Creates a ``#warning [message]`` directive.
    * - :meth:`~cfile.factory.CFactory.pragma_directive`
      - Creates a ``#pragma [tokens]`` directive.
    * - :meth:`~cfile.factory.CFactory.extern`

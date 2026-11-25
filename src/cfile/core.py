@@ -37,6 +37,50 @@ class IncludeDirective(Directive):
         super().__init__(f"include {target}")
 
 
+class IncludeNextDirective(Directive):
+    """
+    Preprocessor ``#include_next`` directive (GCC/Clang extension).
+
+    Args:
+        path_to_file: Header file path to include.
+        sys: When ``True``, wraps the path in ``<...>``; when ``False``, wraps it in ``"..."``.
+    """
+    def __init__(self, path_to_file: str, sys: bool = False) -> None:
+        self.path_to_file = path_to_file
+        self.sys = sys
+        target = f"<{path_to_file}>" if sys else f'"{path_to_file}"'
+        super().__init__(f"include_next {target}")
+
+
+class EmbedDirective(Directive):
+    """
+    Preprocessor ``#embed`` directive (C23).
+
+    Args:
+        path_to_file: Resource file path to embed.
+        sys: When ``True``, wraps the path in ``<...>``; when ``False``, wraps it in ``"..."``.
+        params: Optional embed parameter string or list of parameter strings
+            (e.g. ``"limit(256)"`` or ``["limit(256)", "if_empty(0)"]``).
+    """
+    def __init__(self,
+                 path_to_file: str,
+                 sys: bool = False,
+                 params: str | list[str] | None = None) -> None:
+        self.path_to_file = path_to_file
+        self.sys = sys
+        self.params = params
+        target = f"<{path_to_file}>" if sys else f'"{path_to_file}"'
+        if params is None:
+            text = f"embed {target}"
+        elif isinstance(params, str):
+            text = f"embed {target} {params}"
+        elif isinstance(params, list):
+            text = f"embed {target} {' '.join(params)}"
+        else:
+            raise ValueError(f"Unsupported type of params: {str(type(params))}")
+        super().__init__(text)
+
+
 class DefineDirective(Directive):
     """
     Preprocessor ``#define`` directive.
@@ -114,6 +158,30 @@ class ElifDirective(Directive):
         super().__init__(f"elif {expression}")
 
 
+class ElifdefDirective(Directive):
+    """
+    Preprocessor ``#elifdef`` conditional directive (C23).
+
+    Args:
+        identifier: Macro identifier to test.
+    """
+    def __init__(self, identifier: str) -> None:
+        self.identifier = identifier
+        super().__init__(f"elifdef {identifier}")
+
+
+class ElifndefDirective(Directive):
+    """
+    Preprocessor ``#elifndef`` conditional directive (C23).
+
+    Args:
+        identifier: Macro identifier to test.
+    """
+    def __init__(self, identifier: str) -> None:
+        self.identifier = identifier
+        super().__init__(f"elifndef {identifier}")
+
+
 class ElseDirective(Directive):
     """
     Preprocessor ``#else`` conditional directive.
@@ -157,6 +225,18 @@ class ErrorDirective(Directive):
     def __init__(self, message: str = "") -> None:
         self.message = message
         super().__init__(f"error {message}" if message else "error")
+
+
+class WarningDirective(Directive):
+    """
+    Preprocessor ``#warning`` diagnostic directive (C23 and compiler extension).
+
+    Args:
+        message: Optional diagnostic warning message text.
+    """
+    def __init__(self, message: str = "") -> None:
+        self.message = message
+        super().__init__(f"warning {message}" if message else "warning")
 
 
 class PragmaDirective(Directive):

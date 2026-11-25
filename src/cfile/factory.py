@@ -130,6 +130,39 @@ class CFactory:  # pylint: disable=too-many-public-methods
         """
         return core.IncludeDirective(path_to_file, sys=sys)
 
+    def include_next_directive(self, path_to_file: str, sys: bool = False) -> core.IncludeNextDirective:
+        """
+        Creates an ``#include_next`` preprocessor directive (GCC/Clang extension).
+
+        Args:
+            path_to_file: Header file path to include.
+            sys: When ``True``, wraps the path in angle brackets (``#include_next <...>``);
+                when ``False`` (the default), wraps it in double quotes (``#include_next "..."``).
+
+        Returns:
+            A new :class:`~cfile.core.IncludeNextDirective` instance.
+        """
+        return core.IncludeNextDirective(path_to_file, sys=sys)
+
+    def embed_directive(self,
+                        path_to_file: str,
+                        sys: bool = False,
+                        params: str | list[str] | None = None) -> core.EmbedDirective:
+        """
+        Creates a C23 ``#embed`` preprocessor directive.
+
+        Args:
+            path_to_file: Resource file path to embed.
+            sys: When ``True``, wraps the path in angle brackets (``#embed <...>``);
+                when ``False`` (the default), wraps it in double quotes (``#embed "..."``).
+            params: Optional embed parameter string or list of parameter strings
+                (e.g. ``"limit(256)"`` or ``["limit(256)", "if_empty(0)"]``).
+
+        Returns:
+            A new :class:`~cfile.core.EmbedDirective` instance.
+        """
+        return core.EmbedDirective(path_to_file, sys=sys, params=params)
+
     def define_directive(self, left: str, right: str | int | float | None = None) -> core.DefineDirective:
         """
         Creates a ``#define <left> [right]`` preprocessor directive.
@@ -203,6 +236,30 @@ class CFactory:  # pylint: disable=too-many-public-methods
         """
         return core.ElifDirective(expression)
 
+    def elifdef_directive(self, identifier: str) -> core.ElifdefDirective:
+        """
+        Creates a C23 ``#elifdef <identifier>`` preprocessor directive.
+
+        Args:
+            identifier: Preprocessor macro identifier to test.
+
+        Returns:
+            A new :class:`~cfile.core.ElifdefDirective` instance.
+        """
+        return core.ElifdefDirective(identifier)
+
+    def elifndef_directive(self, identifier: str) -> core.ElifndefDirective:
+        """
+        Creates a C23 ``#elifndef <identifier>`` preprocessor directive.
+
+        Args:
+            identifier: Preprocessor macro identifier to test.
+
+        Returns:
+            A new :class:`~cfile.core.ElifndefDirective` instance.
+        """
+        return core.ElifndefDirective(identifier)
+
     def else_directive(self) -> core.ElseDirective:
         """
         Creates an ``#else`` preprocessor directive.
@@ -245,6 +302,18 @@ class CFactory:  # pylint: disable=too-many-public-methods
             A new :class:`~cfile.core.ErrorDirective` instance.
         """
         return core.ErrorDirective(message)
+
+    def warning_directive(self, message: str = "") -> core.WarningDirective:
+        """
+        Creates a ``#warning [message]`` preprocessor directive (C23 and compiler extension).
+
+        Args:
+            message: Diagnostic warning message text.
+
+        Returns:
+            A new :class:`~cfile.core.WarningDirective` instance.
+        """
+        return core.WarningDirective(message)
 
     def pragma_directive(self, tokens: str = "") -> core.PragmaDirective:
         """

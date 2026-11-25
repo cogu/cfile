@@ -166,6 +166,14 @@ Preprocessor Directives
    :members:
    :show-inheritance:
 
+.. autoclass:: cfile.core.IncludeNextDirective
+   :members:
+   :show-inheritance:
+
+.. autoclass:: cfile.core.EmbedDirective
+   :members:
+   :show-inheritance:
+
 .. autoclass:: cfile.core.DefineDirective
    :members:
    :show-inheritance:
@@ -190,6 +198,14 @@ Preprocessor Directives
    :members:
    :show-inheritance:
 
+.. autoclass:: cfile.core.ElifdefDirective
+   :members:
+   :show-inheritance:
+
+.. autoclass:: cfile.core.ElifndefDirective
+   :members:
+   :show-inheritance:
+
 .. autoclass:: cfile.core.ElseDirective
    :members:
    :show-inheritance:
@@ -203,6 +219,10 @@ Preprocessor Directives
    :show-inheritance:
 
 .. autoclass:: cfile.core.ErrorDirective
+   :members:
+   :show-inheritance:
+
+.. autoclass:: cfile.core.WarningDirective
    :members:
    :show-inheritance:
 

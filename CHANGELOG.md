@@ -17,10 +17,11 @@ Notable changes.
 * `Union` (`C.union`) and `UnionMember` (`C.union_member`), anonymous structs and unions (`name=None`), and inline nested struct/union declarations
 * `Enum` (`C.enum`) and `EnumMember` (`C.enum_member`) with automatic member `prefix` support
 * Support nested list initializers and named/designated `dict` initializers (`{"x": 1, "y": 2}` -> `{.x=1, .y=2}`) for structs and unions
-* C99 preprocessor directives and generic `C.directive(text)`:
+* Preprocessor directives and generic `C.directive(text)`:
+  * `IncludeNextDirective` (`C.include_next_directive`) and `EmbedDirective` (`C.embed_directive`)
   * `UndefDirective` (`C.undef_directive`)
-  * `IfDirective` (`C.if_directive`), `ElifDirective` (`C.elif_directive`), and `ElseDirective` (`C.else_directive`)
-  * `LineDirective` (`C.line_directive`), `ErrorDirective` (`C.error_directive`), and `PragmaDirective` (`C.pragma_directive`)
+  * `IfDirective` (`C.if_directive`), `ElifDirective` (`C.elif_directive`), `ElifdefDirective` (`C.elifdef_directive`), `ElifndefDirective` (`C.elifndef_directive`), and `ElseDirective` (`C.else_directive`)
+  * `LineDirective` (`C.line_directive`), `ErrorDirective` (`C.error_directive`), `WarningDirective` (`C.warning_directive`), and `PragmaDirective` (`C.pragma_directive`)
 * Automatic preprocessor directive indentation options in `StyleOptions` (`indent_pp_directives: PPDirectiveIndent` and `pp_indent_width`) with top-level include-guard detection
 * Support passing a `Function` object directly to `FunctionCall` / `C.fn_call` with argument count validation
 * Support passing a function body (`Block` or `Sequence`) directly as the second argument (`content`) of `Declaration` / `C.declaration`

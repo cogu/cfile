@@ -121,16 +121,21 @@ class Writer(Formatter):
             "Line": self._write_line_element,
             "Directive": self._write_directive,
             "IncludeDirective": self._write_directive,
+            "IncludeNextDirective": self._write_directive,
+            "EmbedDirective": self._write_directive,
             "DefineDirective": self._write_directive,
             "UndefDirective": self._write_directive,
             "IfDirective": self._write_directive,
             "IfdefDirective": self._write_directive,
             "IfndefDirective": self._write_directive,
             "ElifDirective": self._write_directive,
+            "ElifdefDirective": self._write_directive,
+            "ElifndefDirective": self._write_directive,
             "ElseDirective": self._write_directive,
             "EndifDirective": self._write_directive,
             "LineDirective": self._write_directive,
             "ErrorDirective": self._write_directive,
+            "WarningDirective": self._write_directive,
             "PragmaDirective": self._write_directive,
             "Extern": self._write_extern,
         }
@@ -1047,7 +1052,7 @@ class Writer(Formatter):
                 self._next_ifndef_is_guard = False
             else:
                 self._pp_stack.append(1)
-        elif isinstance(elem, (core.ElifDirective, core.ElseDirective)):
+        elif isinstance(elem, (core.ElifDirective, core.ElifdefDirective, core.ElifndefDirective, core.ElseDirective)):
             top_step = self._pp_stack[-1] if self._pp_stack else 0
             depth = max(0, current_depth - top_step)
         elif isinstance(elem, core.EndifDirective):

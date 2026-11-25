@@ -143,7 +143,54 @@ class TestPreprocessor(unittest.TestCase):
         self.assertEqual(writer.write_str_elem(C.line_directive(42)), '#line 42')
         self.assertEqual(writer.write_str_elem(C.line_directive(42, "gen.c")), '#line 42 "gen.c"')
         self.assertEqual(writer.write_str_elem(C.error_directive('"Unsupported"')), '#error "Unsupported"')
+        self.assertEqual(writer.write_str_elem(C.warning_directive('"Deprecated"')), '#warning "Deprecated"')
         self.assertEqual(writer.write_str_elem(C.pragma_directive("once")), '#pragma once')
+
+    def test_c23_and_extension_directives(self):
+        C = cfile.CFactory()
+        writer = cfile.Writer()
+        self.assertEqual(writer.write_str_elem(C.include_next_directive("limits.h", sys=True)),
+                         '#include_next <limits.h>')
+        self.assertEqual(writer.write_str_elem(C.include_next_directive("local.h")),
+                         '#include_next "local.h"')
+        self.assertEqual(writer.write_str_elem(C.embed_directive("icon.png")),
+                         '#embed "icon.png"')
+        self.assertEqual(writer.write_str_elem(C.embed_directive("data.bin", sys=True, params="limit(256)")),
+                         '#embed <data.bin> limit(256)')
+        self.assertEqual(
+            writer.write_str_elem(C.embed_directive("blob.bin", params=["limit(64)", "if_empty(0)"])),
+            '#embed "blob.bin" limit(64) if_empty(0)'
+        )
+        self.assertEqual(writer.write_str_elem(C.elifdef_directive("FOO")), '#elifdef FOO')
+        self.assertEqual(writer.write_str_elem(C.elifndef_directive("BAR")), '#elifndef BAR')
+
+        code = C.sequence([
+            C.ifdef_directive("PLATFORM_A"),
+            C.define_directive("TARGET", 1),
+            C.elifdef_directive("PLATFORM_B"),
+            C.define_directive("TARGET", 2),
+            C.elifndef_directive("NO_FALLBACK"),
+            C.warning_directive('"Using fallback target"'),
+            C.define_directive("TARGET", 0),
+            C.endif_directive(),
+        ])
+        indented_writer = cfile.Writer(
+            cfile.StyleOptions(
+                indent_pp_directives=style.PPDirectiveIndent.AFTER_HASH,
+                pp_indent_width=1,
+            )
+        )
+        expected = "\n".join([
+            "#ifdef PLATFORM_A",
+            "# define TARGET 1",
+            "#elifdef PLATFORM_B",
+            "# define TARGET 2",
+            "#elifndef NO_FALLBACK",
+            '# warning "Using fallback target"',
+            "# define TARGET 0",
+            "#endif",
+        ])
+        self.assertEqual(expected, indented_writer.write_str(code))
 
     def test_pp_indent_after_hash_with_include_guard(self):
         C = cfile.CFactory()
