@@ -573,23 +573,22 @@ class CFactory:  # pylint: disable=too-many-public-methods
         return core.ReturnStatement(expression)
 
     def declaration(self,
-                    element: Union[core.Variable, core.Function, core.DataType],
-                    init_value: Any | None = None) -> core.Declaration:
+                    element: core.Variable | core.Function | core.DataType,
+                    content: Any | None = None) -> core.Declaration:
         """
-        Wraps a variable, function, struct, or typedef to emit its full C declaration.
+        Wraps a variable, function, struct, union, enum, or typedef to emit its full C declaration.
 
         Args:
             element: The :class:`~cfile.core.Variable`, :class:`~cfile.core.Function`, or
                 :class:`~cfile.core.DataType` to declare.
-            init_value: Optional initial value (only valid when ``element`` is a
-                :class:`~cfile.core.Variable`). Supports integers, strings, lists (for
-                brace-enclosed struct/array initializers), or :class:`~cfile.core.Element`
-                expressions.
+            content: Optional initial value (when ``element`` is a :class:`~cfile.core.Variable`)
+                or function body :class:`~cfile.core.Block` / :class:`~cfile.core.Sequence`
+                (when ``element`` is a :class:`~cfile.core.Function`).
 
         Returns:
             A new :class:`~cfile.core.Declaration` instance.
         """
-        return core.Declaration(element, init_value)
+        return core.Declaration(element, content)
 
     def if_statement(self,
                      condition: Any | None = None,

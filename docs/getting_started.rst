@@ -30,13 +30,11 @@ The following example creates a ``main`` function that prints ``Hello World\n`` 
             C.variable("argv", char_ptr_type, pointer=True),
         ],
     )
-    code.append(C.declaration(main_fn))
-
     main_body = C.block([
         C.statement(C.fn_call("printf", C.str_literal(r"Hello World\n"))),
         C.return_statement(0),
     ])
-    code.append(main_body)
+    code.append(C.declaration(main_fn, main_body))
 
     writer = cfile.Writer()
     print(writer.write_str(code))

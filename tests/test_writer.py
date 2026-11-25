@@ -384,6 +384,20 @@ class TestFunctionDeclaration(unittest.TestCase):
         output = writer.write_str_elem(core.Declaration(func))
         self.assertEqual(output, "int main(int argc, char** argv)")
 
+    def test_function_declaration_with_body_content(self):
+        C = cfile.CFactory()
+        func = C.function("add", "int", params=[C.variable("a", "int"), C.variable("b", "int")])
+        body = C.sequence(C.return_statement("a + b"))
+        decl = C.declaration(func, body)
+
+        allman_writer = cfile.Writer(cfile.StyleOptions(break_before_braces=style.BreakBeforeBraces.ALLMAN))
+        expected_allman = "\n".join(["int add(int a, int b)", "{", "    return a + b;", "}"])
+        self.assertEqual(expected_allman, allman_writer.write_str_elem(decl))
+
+        attach_writer = cfile.Writer(cfile.StyleOptions(break_before_braces=style.BreakBeforeBraces.ATTACH))
+        expected_attach = "\n".join(["int add(int a, int b) {", "    return a + b;", "}"])
+        self.assertEqual(expected_attach, attach_writer.write_str_elem(decl))
+
 
 class TestAssignment(unittest.TestCase):
 

@@ -622,24 +622,41 @@ class Function(Element):
 
 class Declaration(Element):
     """
-    A declaration element
-    Valid sub-elements:
-    - Variable
-    - DataType (including struct and union)
-    - Function
+    A declaration element for variables, functions, or data types.
+
+    Args:
+        element: The :class:`Variable`, :class:`Function`, or :class:`DataType`
+            (including :class:`Struct`, :class:`Union`, :class:`Enum`, or
+            :class:`TypeDef`) to declare.
+        content: Optional initializer value (when ``element`` is a :class:`Variable`)
+            or function body :class:`Block` / :class:`Sequence` (when ``element`` is
+            a :class:`Function`).
     """
     def __init__(self,
                  element: Variable | Function | DataType,
-                 init_value: Any | None = None) -> None:
+                 content: Any | None = None) -> None:
         if isinstance(element, (Variable, Function, DataType)):
             self.element = element
-            self.init_value = None
+            self.init_value: Any | None = None
+            self.body: Block | None = None
         else:
             raise TypeError(f"element: Invalid type '{str(type(element))}'")
-        if init_value is not None:
-            if not isinstance(element, Variable):
-                raise ValueError("init_value only allowed for Variable declarations")
-            self.init_value = init_value
+        if content is not None:
+            if isinstance(element, Variable):
+                self.init_value = content
+            elif isinstance(element, Function):
+                if isinstance(content, Block):
+                    self.body = content
+                elif isinstance(content, Sequence):
+                    block = Block()
+                    block.extend(content)
+                    self.body = block
+                else:
+                    raise TypeError(
+                        f"Expected Sequence or Block for Function declaration content, got {str(type(content))}"
+                    )
+            else:
+                raise ValueError("content only allowed for Variable or Function declarations")
 
 
 class FunctionCall(Element):

@@ -268,6 +268,7 @@ class Writer(Formatter):
         prev_is_func_decl = (
             isinstance(prev_elem, core.Declaration)
             and isinstance(prev_elem.element, core.Function)
+            and prev_elem.body is None
         )
         prev_is_case_label = isinstance(prev_elem, (core.SwitchLabel, core.SwitchDefault))
 
@@ -392,6 +393,14 @@ class Writer(Formatter):
             self._write_variable_declaration(elem.element)
         elif isinstance(elem.element, core.Function):
             self._write_function_declaration(elem.element)
+            if elem.body is not None:
+                if self.style.brace_wrapping.after_function:
+                    self._eol()
+                    self._start_line()
+                    self._write_block(elem.body)
+                else:
+                    self._write(" ")
+                    self._write_block(elem.body)
         else:
             raise NotImplementedError(str(type(elem.element)))
         if elem.init_value is not None:

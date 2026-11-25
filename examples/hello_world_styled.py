@@ -13,14 +13,15 @@ code = C.sequence()
 code.append(C.sys_include("stdio.h"))
 code.append(C.blank())
 char_ptr_type = C.type("char", pointer=True)
-code.append(C.declaration(C.function("main", "int",
-                                     params=[C.variable("argc", "int"),
-                                             C.variable("argv", char_ptr_type, pointer=True)
-                                             ])))
-main_body = C.block()
-main_body.append(C.statement(C.fn_call("printf", C.str_literal(r"Hello World\n"))))
-main_body.append(C.statement(C.fn_return(0)))
-code.append(main_body)
+main_function = C.function("main",
+                           "int",
+                           params=[C.variable("argc", "int"),
+                                   C.variable("argv", char_ptr_type, pointer=True)])
+main_body = C.block([
+    C.statement(C.fn_call("printf", C.str_literal(r"Hello World\n"))),
+    C.statement(C.fn_return(0)),
+])
+code.append(C.declaration(main_function, main_body))
 style = cfile.StyleOptions(break_before_braces=cfile.BreakBeforeBraces.ATTACH,
                            pointer_alignment=cfile.Alignment.RIGHT)
 writer = cfile.Writer(style)

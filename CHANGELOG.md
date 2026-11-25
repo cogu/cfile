@@ -13,6 +13,7 @@ Notable changes.
 * `Enum` (`C.enum`) and `EnumMember` (`C.enum_member`) with automatic member `prefix` support
 * Support nested list initializers and named/designated `dict` initializers (`{"x": 1, "y": 2}` -> `{.x=1, .y=2}`) for structs and unions
 * Support passing a `Function` object directly to `FunctionCall` / `C.fn_call` with argument count validation
+* Support passing a function body (`Block` or `Sequence`) directly as the second argument (`content`) of `Declaration` / `C.declaration`
 * Support `Element` initializers (such as `FunctionCall`) in variable `Declaration`
 * `__str__` helper on `Variable`, `StructMember`, `Function`, `TypeDef`, and `NamedLabel` returning the identifier name
 * Style options: `BraceWrapping.after_control_statement`, `StyleOptions.indent_case_labels`, `StyleOptions.indent_case_blocks`, and `StyleOptions.indent_goto_labels`
