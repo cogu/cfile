@@ -87,71 +87,119 @@ Line 4"""
 
 class TestPreprocessor(unittest.TestCase):
 
+    def test_custom_directive(self):
+        C = cfile.CFactory()
+        element = C.directive("ident \"@(#)main.c\"")
+        writer = cfile.Writer()
+        self.assertEqual(writer.write_str_elem(element), '#ident "@(#)main.c"')
+
     def test_normal_include(self):
-        element = core.IncludeDirective("path/to/file.h")
-        writer = cfile.Writer(cfile.StyleOptions())
-        output = writer.write_str_elem(element)
-        self.assertEqual(output, '#include "path/to/file.h"')
+        C = cfile.CFactory()
+        element = C.include_directive("path/to/file.h")
+        writer = cfile.Writer()
+        self.assertEqual(writer.write_str_elem(element), '#include "path/to/file.h"')
 
     def test_system_include(self):
-        element = core.IncludeDirective("stdio.h", system=True)
-        writer = cfile.Writer(cfile.StyleOptions())
-        output = writer.write_str_elem(element)
-        self.assertEqual(output, '#include <stdio.h>')
+        C = cfile.CFactory()
+        element = C.include_directive("stdio.h", sys=True)
+        writer = cfile.Writer()
+        self.assertEqual(writer.write_str_elem(element), '#include <stdio.h>')
 
     def test_define_with_left_part_only(self):
-        element = core.DefineDirective("INCLUDE_GUARD")
-        writer = cfile.Writer(cfile.StyleOptions())
-        output = writer.write_str_elem(element)
-        self.assertEqual(output, '#define INCLUDE_GUARD')
+        C = cfile.CFactory()
+        element = C.define_directive("INCLUDE_GUARD")
+        writer = cfile.Writer()
+        self.assertEqual(writer.write_str_elem(element), '#define INCLUDE_GUARD')
 
     def test_define_with_left_and_right(self):
-        element = core.DefineDirective("MAX(a,b)", "int_max(a,b)")
-        writer = cfile.Writer(cfile.StyleOptions())
-        output = writer.write_str_elem(element)
-        self.assertEqual(output, '#define MAX(a,b) int_max(a,b)')
+        C = cfile.CFactory()
+        element = C.define_directive("MAX(a,b)", "int_max(a,b)")
+        writer = cfile.Writer()
+        self.assertEqual(writer.write_str_elem(element), '#define MAX(a,b) int_max(a,b)')
 
-    def test_define_with_left_part__adjusted(self):
-        element = core.DefineDirective("IDENTIFIER", adjust=4)
-        writer = cfile.Writer(cfile.StyleOptions())
-        output = writer.write_str_elem(element)
-        self.assertEqual(output, '#    define IDENTIFIER')
+    def test_undef(self):
+        C = cfile.CFactory()
+        element = C.undef_directive("TEMP_MACRO")
+        writer = cfile.Writer()
+        self.assertEqual(writer.write_str_elem(element), '#undef TEMP_MACRO')
 
-    def test_ifdef(self):
-        element = core.IfdefDirective("IDENTIFIER")
-        writer = cfile.Writer(cfile.StyleOptions())
-        output = writer.write_str_elem(element)
-        self.assertEqual(output, '#ifdef IDENTIFIER')
+    def test_if_elif_else_endif(self):
+        C = cfile.CFactory()
+        writer = cfile.Writer()
+        self.assertEqual(writer.write_str_elem(C.if_directive("VERSION >= 2")), '#if VERSION >= 2')
+        self.assertEqual(writer.write_str_elem(C.elif_directive("VERSION == 1")), '#elif VERSION == 1')
+        self.assertEqual(writer.write_str_elem(C.else_directive()), '#else')
+        self.assertEqual(writer.write_str_elem(C.endif_directive()), '#endif')
 
-    def test_ifdef__adjusted(self):
-        element = core.IfdefDirective("IDENTIFIER", adjust=2)
-        writer = cfile.Writer(cfile.StyleOptions())
-        output = writer.write_str_elem(element)
-        self.assertEqual(output, '#  ifdef IDENTIFIER')
+    def test_ifdef_and_ifndef(self):
+        C = cfile.CFactory()
+        writer = cfile.Writer()
+        self.assertEqual(writer.write_str_elem(C.ifdef_directive("IDENTIFIER")), '#ifdef IDENTIFIER')
+        self.assertEqual(writer.write_str_elem(C.ifndef_directive("IDENTIFIER")), '#ifndef IDENTIFIER')
 
-    def test_ifndef(self):
-        element = core.IfndefDirective("IDENTIFIER")
-        writer = cfile.Writer(cfile.StyleOptions())
-        output = writer.write_str_elem(element)
-        self.assertEqual(output, '#ifndef IDENTIFIER')
+    def test_line_error_and_pragma_directives(self):
+        C = cfile.CFactory()
+        writer = cfile.Writer()
+        self.assertEqual(writer.write_str_elem(C.line_directive(42)), '#line 42')
+        self.assertEqual(writer.write_str_elem(C.line_directive(42, "gen.c")), '#line 42 "gen.c"')
+        self.assertEqual(writer.write_str_elem(C.error_directive('"Unsupported"')), '#error "Unsupported"')
+        self.assertEqual(writer.write_str_elem(C.pragma_directive("once")), '#pragma once')
 
-    def test_ifndef__adjusted(self):
-        element = core.IfndefDirective("IDENTIFIER", adjust=2)
-        writer = cfile.Writer(cfile.StyleOptions())
-        output = writer.write_str_elem(element)
-        self.assertEqual(output, '#  ifndef IDENTIFIER')
+    def test_pp_indent_after_hash_with_include_guard(self):
+        C = cfile.CFactory()
+        code = C.sequence([
+            C.ifndef_directive("OS_MACRO_H"),
+            C.define_directive("OS_MACRO_H"),
+            C.blank(),
+            C.ifdef_directive("_WIN32"),
+            C.ifndef_directive("WIN32_LEAN_AND_MEAN"),
+            C.define_directive("WIN32_LEAN_AND_MEAN"),
+            C.endif_directive(),
+            C.include_directive("Windows.h", sys=True),
+            C.else_directive(),
+            C.include_directive("unistd.h", sys=True),
+            C.endif_directive(),
+            [C.endif_directive(), C.line_comment(" OS_MACRO_H")],
+        ])
+        opts = cfile.StyleOptions(
+            indent_pp_directives=style.PPDirectiveIndent.AFTER_HASH,
+            pp_indent_width=1,
+        )
+        writer = cfile.Writer(opts)
+        expected = "\n".join([
+            "#ifndef OS_MACRO_H",
+            "#define OS_MACRO_H",
+            "",
+            "#ifdef _WIN32",
+            "# ifndef WIN32_LEAN_AND_MEAN",
+            "#  define WIN32_LEAN_AND_MEAN",
+            "# endif",
+            "# include <Windows.h>",
+            "#else",
+            "# include <unistd.h>",
+            "#endif",
+            "#endif // OS_MACRO_H",
+        ])
+        self.assertEqual(expected, writer.write_str(code))
 
-    def test_endif(self):
-        element = core.EndifDirective()
-        writer = cfile.Writer(cfile.StyleOptions())
-        output = writer.write_str_elem(element)
-        self.assertEqual(output, '#endif')
-
-    def test_endif__adjusted(self):
-        element = core.EndifDirective(adjust=4)
-        writer = cfile.Writer(cfile.StyleOptions())
-        output = writer.write_str_elem(element)
-        self.assertEqual(output, '#    endif')
+    def test_pp_indent_before_hash(self):
+        C = cfile.CFactory()
+        code = C.sequence([
+            C.ifdef_directive("FOO"),
+            C.define_directive("BAR", 1),
+            C.endif_directive(),
+        ])
+        opts = cfile.StyleOptions(
+            indent_pp_directives=style.PPDirectiveIndent.BEFORE_HASH,
+            pp_indent_width=2,
+        )
+        writer = cfile.Writer(opts)
+        expected = "\n".join([
+            "#ifdef FOO",
+            "  #define BAR 1",
+            "#endif",
+        ])
+        self.assertEqual(expected, writer.write_str(code))
 
 
 class TestTypeDeclarations(unittest.TestCase):

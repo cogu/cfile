@@ -119,13 +119,23 @@ class Writer(Formatter):
             "SwitchDefault": self._write_switch_default,
             "SwitchStatement": self._write_switch_statement,
             "Line": self._write_line_element,
-            "IncludeDirective": self._write_include_directive,
-            "DefineDirective": self._write_define_directive,
-            "IfdefDirective": self._write_ifdef_directive,
-            "IfndefDirective": self._write_ifndef_directive,
-            "EndifDirective": self._write_endif_directive,
+            "Directive": self._write_directive,
+            "IncludeDirective": self._write_directive,
+            "DefineDirective": self._write_directive,
+            "UndefDirective": self._write_directive,
+            "IfDirective": self._write_directive,
+            "IfdefDirective": self._write_directive,
+            "IfndefDirective": self._write_directive,
+            "ElifDirective": self._write_directive,
+            "ElseDirective": self._write_directive,
+            "EndifDirective": self._write_directive,
+            "LineDirective": self._write_directive,
+            "ErrorDirective": self._write_directive,
+            "PragmaDirective": self._write_directive,
             "Extern": self._write_extern,
         }
+        self._pp_stack: list[int] = []
+        self._next_ifndef_is_guard: bool = False
 
     def write_file(self, sequence: core.Sequence, file_path: str) -> None:
         """
@@ -157,6 +167,8 @@ class Writer(Formatter):
         """
         assert isinstance(sequence, core.Sequence)
         self._str_open()
+        self._pp_stack = []
+        self._next_ifndef_is_guard = False
         self._write_sequence(sequence)
         assert isinstance(self.fh, StringIO)
         value = self.fh.getvalue()
@@ -177,6 +189,8 @@ class Writer(Formatter):
             The rendered C element as a string.
         """
         self._str_open()
+        self._pp_stack = []
+        self._next_ifndef_is_guard = False
         self._write_element(elem)
         assert isinstance(self.fh, StringIO)
         value = self.fh.getvalue()
@@ -222,6 +236,12 @@ class Writer(Formatter):
             elif isinstance(elem, core.Line):
                 self._start_line()
                 self._write_line_element(elem)
+            elif isinstance(elem, core.Directive):
+                if self._is_include_guard(sequence, i):
+                    self._next_ifndef_is_guard = True
+                self._start_line()
+                self._write_directive(elem)
+                self._eol()
             else:
                 self._start_line()
                 class_name = elem.__class__.__name__
@@ -230,8 +250,18 @@ class Writer(Formatter):
                     write_method(elem)
                 else:
                     raise NotImplementedError(f"Found no writer for element {class_name}")
-                if isinstance(elem, core.Directive):
-                    self._eol()
+
+    def _is_include_guard(self, sequence: core.Sequence, index: int) -> bool:
+        if len(self._pp_stack) != 0 or index + 1 >= len(sequence.elements):
+            return False
+        elem = sequence.elements[index]
+        next_elem = sequence.elements[index + 1]
+        return (
+            isinstance(elem, core.IfndefDirective)
+            and isinstance(next_elem, core.DefineDirective)
+            and next_elem.left == elem.identifier
+            and next_elem.right is None
+        )
 
     def _write_case_element_in_sequence(self,
                                         elem: core.SwitchLabel | core.SwitchDefault,
@@ -1008,26 +1038,32 @@ class Writer(Formatter):
 
 # Preprocessor directives
 
-    def _write_include_directive(self, elem: core.IncludeDirective) -> None:
-        if elem.system:
-            self._write(f'#include <{elem.path_to_file}>')
+    def _write_directive(self, elem: core.Directive) -> None:
+        current_depth = sum(self._pp_stack)
+        if isinstance(elem, (core.IfDirective, core.IfdefDirective, core.IfndefDirective)):
+            depth = current_depth
+            if isinstance(elem, core.IfndefDirective) and self._next_ifndef_is_guard:
+                self._pp_stack.append(0)
+                self._next_ifndef_is_guard = False
+            else:
+                self._pp_stack.append(1)
+        elif isinstance(elem, (core.ElifDirective, core.ElseDirective)):
+            top_step = self._pp_stack[-1] if self._pp_stack else 0
+            depth = max(0, current_depth - top_step)
+        elif isinstance(elem, core.EndifDirective):
+            top_step = self._pp_stack.pop() if self._pp_stack else 0
+            depth = max(0, current_depth - top_step)
         else:
-            self._write(f'#include "{elem.path_to_file}"')
+            depth = current_depth
 
-    def _write_define_directive(self, elem: core.DefineDirective) -> None:
-        if elem.right is not None:
-            self._write(f"#{' '*elem.adjust}define {elem.left} {elem.right}")
+        pp_width = self.indent_width if self.style.pp_indent_width < 0 else self.style.pp_indent_width
+        spaces = " " * (depth * pp_width)
+        if self.style.indent_pp_directives == c_style.PPDirectiveIndent.AFTER_HASH:
+            self._write(f"#{spaces}{elem.text}")
+        elif self.style.indent_pp_directives == c_style.PPDirectiveIndent.BEFORE_HASH:
+            self._write(f"{spaces}#{elem.text}")
         else:
-            self._write(f"#{' '*elem.adjust}define {elem.left}")
-
-    def _write_ifdef_directive(self, elem: core.IfdefDirective) -> None:
-        self._write(f"#{' '*elem.adjust}ifdef {elem.identifier}")
-
-    def _write_ifndef_directive(self, elem: core.IfndefDirective) -> None:
-        self._write(f"#{' '*elem.adjust}ifndef {elem.identifier}")
-
-    def _write_endif_directive(self, elem: core.EndifDirective) -> None:
-        self._write(f"#{' '*elem.adjust}endif")
+            self._write(f"#{elem.text}")
 
     def _write_extern(self, elem: core.Extern) -> None:
         self._write(f'extern "{elem.language}"')

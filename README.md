@@ -9,7 +9,7 @@ import cfile
 
 C = cfile.CFactory()
 code = C.sequence()
-code.append(C.sys_include("stdio.h"))
+code.append(C.include_directive("stdio.h", sys=True))
 code.append(C.blank())
 char_ptr_type = C.type("char", pointer=True)
 main_function = C.function("main",
@@ -47,7 +47,7 @@ import cfile
 
 C = cfile.CFactory()
 code = C.sequence()
-code.append(C.sys_include("stdio.h"))
+code.append(C.include_directive("stdio.h", sys=True))
 code.append(C.blank())
 char_ptr_type = C.type("char", pointer=True)
 main_function = C.function("main",

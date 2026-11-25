@@ -104,96 +104,159 @@ class CFactory:  # pylint: disable=too-many-public-methods
         """
         return core.Sequence(elements)
 
-    def include(self, path_to_file: str, adjust: int = 0) -> core.IncludeDirective:
+    def directive(self, text: str) -> core.Directive:
         """
-        Creates a local ``#include "path/to/file.h"`` preprocessor directive.
+        Creates a custom preprocessor directive (``#<text>``).
 
         Args:
-            path_to_file: Header path to include in double quotes.
-            adjust: Number of spaces between ``#`` and ``include``.
+            text: Directive text following ``#``.
+
+        Returns:
+            A new :class:`~cfile.core.Directive` instance.
+        """
+        return core.Directive(text)
+
+    def include_directive(self, path_to_file: str, sys: bool = False) -> core.IncludeDirective:
+        """
+        Creates an ``#include`` preprocessor directive.
+
+        Args:
+            path_to_file: Header file path to include.
+            sys: When ``True``, wraps the path in angle brackets (``#include <...>``);
+                when ``False`` (the default), wraps it in double quotes (``#include "..."``).
 
         Returns:
             A new :class:`~cfile.core.IncludeDirective` instance.
         """
-        return core.IncludeDirective(path_to_file, adjust=adjust)
+        return core.IncludeDirective(path_to_file, sys=sys)
 
-    def sys_include(self, path_to_file: str, adjust: int = 0) -> core.IncludeDirective:
-        """
-        Creates a system ``#include <path/to/file.h>`` preprocessor directive.
-
-        Args:
-            path_to_file: System header path to include in angle brackets.
-            adjust: Number of spaces between ``#`` and ``include``.
-
-        Returns:
-            A new :class:`~cfile.core.IncludeDirective` instance with ``system=True``.
-        """
-        return core.IncludeDirective(path_to_file, system=True, adjust=adjust)
-
-    def sysinclude(self, path_to_file: str, adjust: int = 0) -> core.IncludeDirective:
-        """
-        Alias for :meth:`sys_include`.
-
-        Args:
-            path_to_file: System header path to include in angle brackets.
-            adjust: Number of spaces between ``#`` and ``include``.
-
-        Returns:
-            A new :class:`~cfile.core.IncludeDirective` instance with ``system=True``.
-        """
-        return self.sys_include(path_to_file, adjust=adjust)
-
-    def ifdef(self, identifier: str, adjust: int = 0) -> core.IfdefDirective:
-        """
-        Creates an ``#ifdef <identifier>`` preprocessor directive.
-
-        Args:
-            identifier: Preprocessor macro identifier to test.
-            adjust: Number of spaces between ``#`` and ``ifdef``.
-
-        Returns:
-            A new :class:`~cfile.core.IfdefDirective` instance.
-        """
-        return core.IfdefDirective(identifier, adjust=adjust)
-
-    def ifndef(self, identifier: str, adjust: int = 0) -> core.IfndefDirective:
-        """
-        Creates an ``#ifndef <identifier>`` preprocessor directive.
-
-        Args:
-            identifier: Preprocessor macro identifier to test.
-            adjust: Number of spaces between ``#`` and ``ifndef``.
-
-        Returns:
-            A new :class:`~cfile.core.IfndefDirective` instance.
-        """
-        return core.IfndefDirective(identifier, adjust=adjust)
-
-    def endif(self, adjust: int = 0) -> core.EndifDirective:
-        """
-        Creates an ``#endif`` preprocessor directive.
-
-        Args:
-            adjust: Number of spaces between ``#`` and ``endif``.
-
-        Returns:
-            A new :class:`~cfile.core.EndifDirective` instance.
-        """
-        return core.EndifDirective(adjust=adjust)
-
-    def define(self, left: str, right: str | None = None, adjust: int = 0) -> core.DefineDirective:
+    def define_directive(self, left: str, right: str | int | float | None = None) -> core.DefineDirective:
         """
         Creates a ``#define <left> [right]`` preprocessor directive.
 
         Args:
             left: Macro name or function-like macro signature (e.g. ``"MAX(a, b)"``).
-            right: Optional macro expansion text.
-            adjust: Number of spaces between ``#`` and ``define``.
+            right: Optional macro expansion text or value.
 
         Returns:
             A new :class:`~cfile.core.DefineDirective` instance.
         """
-        return core.DefineDirective(left, right, adjust=adjust)
+        return core.DefineDirective(left, right)
+
+    def undef_directive(self, identifier: str) -> core.UndefDirective:
+        """
+        Creates an ``#undef <identifier>`` preprocessor directive.
+
+        Args:
+            identifier: Preprocessor macro identifier to undefine.
+
+        Returns:
+            A new :class:`~cfile.core.UndefDirective` instance.
+        """
+        return core.UndefDirective(identifier)
+
+    def if_directive(self, expression: str) -> core.IfDirective:
+        """
+        Creates an ``#if <expression>`` preprocessor directive.
+
+        Args:
+            expression: Constant preprocessor expression to evaluate.
+
+        Returns:
+            A new :class:`~cfile.core.IfDirective` instance.
+        """
+        return core.IfDirective(expression)
+
+    def ifdef_directive(self, identifier: str) -> core.IfdefDirective:
+        """
+        Creates an ``#ifdef <identifier>`` preprocessor directive.
+
+        Args:
+            identifier: Preprocessor macro identifier to test.
+
+        Returns:
+            A new :class:`~cfile.core.IfdefDirective` instance.
+        """
+        return core.IfdefDirective(identifier)
+
+    def ifndef_directive(self, identifier: str) -> core.IfndefDirective:
+        """
+        Creates an ``#ifndef <identifier>`` preprocessor directive.
+
+        Args:
+            identifier: Preprocessor macro identifier to test.
+
+        Returns:
+            A new :class:`~cfile.core.IfndefDirective` instance.
+        """
+        return core.IfndefDirective(identifier)
+
+    def elif_directive(self, expression: str) -> core.ElifDirective:
+        """
+        Creates an ``#elif <expression>`` preprocessor directive.
+
+        Args:
+            expression: Constant preprocessor expression to evaluate.
+
+        Returns:
+            A new :class:`~cfile.core.ElifDirective` instance.
+        """
+        return core.ElifDirective(expression)
+
+    def else_directive(self) -> core.ElseDirective:
+        """
+        Creates an ``#else`` preprocessor directive.
+
+        Returns:
+            A new :class:`~cfile.core.ElseDirective` instance.
+        """
+        return core.ElseDirective()
+
+    def endif_directive(self) -> core.EndifDirective:
+        """
+        Creates an ``#endif`` preprocessor directive.
+
+        Returns:
+            A new :class:`~cfile.core.EndifDirective` instance.
+        """
+        return core.EndifDirective()
+
+    def line_directive(self, line_number: int | str, filename: str | None = None) -> core.LineDirective:
+        """
+        Creates a ``#line <line_number> ["<filename>"]`` preprocessor directive.
+
+        Args:
+            line_number: Line number to set.
+            filename: Optional source filename string.
+
+        Returns:
+            A new :class:`~cfile.core.LineDirective` instance.
+        """
+        return core.LineDirective(line_number, filename)
+
+    def error_directive(self, message: str = "") -> core.ErrorDirective:
+        """
+        Creates an ``#error [message]`` preprocessor directive.
+
+        Args:
+            message: Diagnostic error message text.
+
+        Returns:
+            A new :class:`~cfile.core.ErrorDirective` instance.
+        """
+        return core.ErrorDirective(message)
+
+    def pragma_directive(self, tokens: str = "") -> core.PragmaDirective:
+        """
+        Creates a ``#pragma [tokens]`` preprocessor directive.
+
+        Args:
+            tokens: Pragma tokens following ``#pragma`` (e.g. ``"once"``).
+
+        Returns:
+            A new :class:`~cfile.core.PragmaDirective` instance.
+        """
+        return core.PragmaDirective(tokens)
 
     def extern(self, language: str) -> core.Extern:
         """

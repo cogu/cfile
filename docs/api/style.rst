@@ -32,3 +32,7 @@ Style Enumerations
 .. autoclass:: cfile.style.ShortFunction
    :members:
    :undoc-members:
+
+.. autoclass:: cfile.style.PPDirectiveIndent
+   :members:
+   :undoc-members:

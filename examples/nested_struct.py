@@ -5,7 +5,7 @@ import cfile
 
 C = cfile.CFactory()
 code = C.sequence()
-code.append(C.sys_include("stdint.h"))
+code.append(C.include_directive("stdint.h", sys=True))
 code.append(C.blank())
 addr_struct = C.struct("addr_t", members=[C.struct_member("port", "uint32_t")])
 in_union = C.union(members=[

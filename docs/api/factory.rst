@@ -129,18 +129,32 @@ Preprocessor Directives
 
    * - Method
      - Description
-   * - :meth:`~cfile.factory.CFactory.include`
-     - Creates a local ``#include "path/to/file.h"`` directive.
-   * - :meth:`~cfile.factory.CFactory.sys_include`
-     - Creates a system ``#include <path/to/file.h>`` directive.
-   * - :meth:`~cfile.factory.CFactory.define`
+   * - :meth:`~cfile.factory.CFactory.directive`
+     - Creates a custom preprocessor directive (``#<text>``).
+   * - :meth:`~cfile.factory.CFactory.include_directive`
+     - Creates an ``#include "path"`` or ``#include <path>`` directive (via ``sys=True``).
+   * - :meth:`~cfile.factory.CFactory.define_directive`
      - Creates a ``#define <left> [right]`` directive.
-   * - :meth:`~cfile.factory.CFactory.ifdef`
+   * - :meth:`~cfile.factory.CFactory.undef_directive`
+     - Creates an ``#undef <identifier>`` directive.
+   * - :meth:`~cfile.factory.CFactory.if_directive`
+     - Creates an ``#if <expression>`` directive.
+   * - :meth:`~cfile.factory.CFactory.ifdef_directive`
      - Creates an ``#ifdef <identifier>`` directive.
-   * - :meth:`~cfile.factory.CFactory.ifndef`
+   * - :meth:`~cfile.factory.CFactory.ifndef_directive`
      - Creates an ``#ifndef <identifier>`` directive.
-   * - :meth:`~cfile.factory.CFactory.endif`
+   * - :meth:`~cfile.factory.CFactory.elif_directive`
+     - Creates an ``#elif <expression>`` directive.
+   * - :meth:`~cfile.factory.CFactory.else_directive`
+     - Creates an ``#else`` directive.
+   * - :meth:`~cfile.factory.CFactory.endif_directive`
      - Creates an ``#endif`` directive.
+   * - :meth:`~cfile.factory.CFactory.line_directive`
+     - Creates a ``#line <number> ["<filename>"]`` directive.
+   * - :meth:`~cfile.factory.CFactory.error_directive`
+     - Creates an ``#error [message]`` directive.
+   * - :meth:`~cfile.factory.CFactory.pragma_directive`
+     - Creates a ``#pragma [tokens]`` directive.
    * - :meth:`~cfile.factory.CFactory.extern`
      - Creates an ``extern "<language>"`` linkage specification.
 

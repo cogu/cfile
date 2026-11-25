@@ -18,7 +18,7 @@ The following example creates a ``main`` function that prints ``Hello World\n`` 
 
     C = cfile.CFactory()
     code = C.sequence()
-    code.append(C.sys_include("stdio.h"))
+    code.append(C.include_directive("stdio.h", sys=True))
     code.append(C.blank())
 
     char_ptr_type = C.type("char", pointer=True)
@@ -158,7 +158,7 @@ using nested Python lists (positional initializers) or dictionaries (C99 designa
 
     C = cfile.CFactory()
     code = C.sequence()
-    code.append(C.sys_include("stdint.h"))
+    code.append(C.include_directive("stdint.h", sys=True))
     code.append(C.blank())
 
     addr_struct = C.struct("addr_t", members=[C.struct_member("port", "uint32_t")])

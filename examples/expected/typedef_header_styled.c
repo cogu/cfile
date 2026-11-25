@@ -4,7 +4,7 @@
 #ifndef __cplusplus
 extern "C"
 {
-# endif
+#endif
 
 #include <stdint.h>
 

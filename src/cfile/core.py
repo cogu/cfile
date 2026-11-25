@@ -13,54 +13,162 @@ class Element:
 
 class Directive(Element):
     """
-    Preprocessor directive
+    Preprocessor directive base class.
+
+    Args:
+        text: Directive text following ``#`` (e.g. ``"pragma once"``).
     """
-    def __init__(self, adjust: int = 0) -> None:
-        self.adjust = adjust
+    def __init__(self, text: str) -> None:
+        self.text = text
 
 
 class IncludeDirective(Directive):
     """
-    Include directive
+    Preprocessor ``#include`` directive.
+
+    Args:
+        path_to_file: Header file path to include.
+        sys: When ``True``, wraps the path in ``<...>``; when ``False``, wraps it in ``"..."``.
     """
-    def __init__(self, path_to_file: str, system: bool = False, adjust: int = 0) -> None:
-        super().__init__(adjust)
+    def __init__(self, path_to_file: str, sys: bool = False) -> None:
         self.path_to_file = path_to_file
-        self.system = system
-
-
-class IfdefDirective(Directive):
-    """
-    Ifdef preprocessor directive
-    """
-    def __init__(self, identifier: str, adjust: int = 0) -> None:
-        super().__init__(adjust)
-        self.identifier = identifier
-
-
-class IfndefDirective(Directive):
-    """
-    Ifndef preprocessor directive
-    """
-    def __init__(self, identifier: str, adjust: int = 0) -> None:
-        super().__init__(adjust)
-        self.identifier = identifier
-
-
-class EndifDirective(Directive):
-    """
-    Endif preprocessor directive
-    """
+        self.sys = sys
+        target = f"<{path_to_file}>" if sys else f'"{path_to_file}"'
+        super().__init__(f"include {target}")
 
 
 class DefineDirective(Directive):
     """
-    Preprocessor define directive
+    Preprocessor ``#define`` directive.
+
+    Args:
+        left: Macro identifier or function-like macro signature.
+        right: Optional macro expansion value.
     """
-    def __init__(self, left: str, right: str | None = None, adjust: int = 0) -> None:
-        super().__init__(adjust)
+    def __init__(self, left: str, right: str | int | float | None = None) -> None:
         self.left = left
-        self.right = right
+        self.right = str(right) if isinstance(right, (int, float)) else right
+        if self.right is not None:
+            super().__init__(f"define {self.left} {self.right}")
+        else:
+            super().__init__(f"define {self.left}")
+
+
+class UndefDirective(Directive):
+    """
+    Preprocessor ``#undef`` directive.
+
+    Args:
+        identifier: Macro identifier to undefine.
+    """
+    def __init__(self, identifier: str) -> None:
+        self.identifier = identifier
+        super().__init__(f"undef {identifier}")
+
+
+class IfDirective(Directive):
+    """
+    Preprocessor ``#if`` conditional directive.
+
+    Args:
+        expression: Constant preprocessor expression to evaluate.
+    """
+    def __init__(self, expression: str) -> None:
+        self.expression = expression
+        super().__init__(f"if {expression}")
+
+
+class IfdefDirective(Directive):
+    """
+    Preprocessor ``#ifdef`` conditional directive.
+
+    Args:
+        identifier: Macro identifier to test.
+    """
+    def __init__(self, identifier: str) -> None:
+        self.identifier = identifier
+        super().__init__(f"ifdef {identifier}")
+
+
+class IfndefDirective(Directive):
+    """
+    Preprocessor ``#ifndef`` conditional directive.
+
+    Args:
+        identifier: Macro identifier to test.
+    """
+    def __init__(self, identifier: str) -> None:
+        self.identifier = identifier
+        super().__init__(f"ifndef {identifier}")
+
+
+class ElifDirective(Directive):
+    """
+    Preprocessor ``#elif`` conditional directive.
+
+    Args:
+        expression: Constant preprocessor expression to evaluate.
+    """
+    def __init__(self, expression: str) -> None:
+        self.expression = expression
+        super().__init__(f"elif {expression}")
+
+
+class ElseDirective(Directive):
+    """
+    Preprocessor ``#else`` conditional directive.
+    """
+    def __init__(self) -> None:
+        super().__init__("else")
+
+
+class EndifDirective(Directive):
+    """
+    Preprocessor ``#endif`` conditional directive.
+    """
+    def __init__(self) -> None:
+        super().__init__("endif")
+
+
+class LineDirective(Directive):
+    """
+    Preprocessor ``#line`` directive.
+
+    Args:
+        line_number: Line number to set.
+        filename: Optional source filename string.
+    """
+    def __init__(self, line_number: int | str, filename: str | None = None) -> None:
+        self.line_number = line_number
+        self.filename = filename
+        if filename is not None:
+            super().__init__(f'line {line_number} "{filename}"')
+        else:
+            super().__init__(f"line {line_number}")
+
+
+class ErrorDirective(Directive):
+    """
+    Preprocessor ``#error`` diagnostic directive.
+
+    Args:
+        message: Optional diagnostic error message text.
+    """
+    def __init__(self, message: str = "") -> None:
+        self.message = message
+        super().__init__(f"error {message}" if message else "error")
+
+
+class PragmaDirective(Directive):
+    """
+    Preprocessor ``#pragma`` directive.
+
+    Args:
+        tokens: Pragma tokens following ``#pragma``.
+    """
+    def __init__(self, tokens: str = "") -> None:
+        self.tokens = tokens
+        super().__init__(f"pragma {tokens}" if tokens else "pragma")
 
 
 class Extern(Element):

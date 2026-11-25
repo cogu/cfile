@@ -47,6 +47,15 @@ class ShortFunction(Enum):
     ALL = 4
 
 
+class PPDirectiveIndent(Enum):
+    """
+    Preprocessor directive indentation style
+    """
+    NONE = 0
+    AFTER_HASH = 1
+    BEFORE_HASH = 2
+
+
 @dataclass
 class BraceWrapping:
     """
@@ -105,7 +114,7 @@ _default_type_qualifier_order = ['const', 'volatile', 'type']
 _default_storage_class_order = ['static', 'extern', 'object']
 
 
-class StyleOptions:
+class StyleOptions:  # pylint: disable=too-many-instance-attributes,too-many-arguments,too-many-positional-arguments
     """
     Formatting style options for :class:`~cfile.writer.Writer`.
 
@@ -133,6 +142,13 @@ class StyleOptions:
         indent_goto_labels: When ``True`` (the default), outdents named ``goto`` labels
             by one level relative to surrounding statements; when ``False``, places them
             at column 0.
+        indent_pp_directives: Controls whether nested preprocessor directives are indented
+            after ``#`` (:attr:`PPDirectiveIndent.AFTER_HASH`), before ``#``
+            (:attr:`PPDirectiveIndent.BEFORE_HASH`), or not at all
+            (:attr:`PPDirectiveIndent.NONE`, the default).
+        pp_indent_width: Number of spaces per preprocessor nesting level when
+            ``indent_pp_directives`` is enabled. When ``-1`` (the default), uses
+            ``indent_width``.
     """
     def __init__(self,
                  break_before_braces: BreakBeforeBraces = BreakBeforeBraces.ALLMAN,
@@ -146,7 +162,9 @@ class StyleOptions:
                  short_functions_on_single_line: ShortFunction = ShortFunction.NEVER,
                  indent_case_labels: bool = False,
                  indent_case_blocks: bool = False,
-                 indent_goto_labels: bool = True) -> None:
+                 indent_goto_labels: bool = True,
+                 indent_pp_directives: PPDirectiveIndent = PPDirectiveIndent.NONE,
+                 pp_indent_width: int = -1) -> None:
         self.break_before_braces = break_before_braces
         self.indent_width = indent_width
         self.indent_char = indent_char
@@ -169,3 +187,5 @@ class StyleOptions:
         self.indent_case_labels = indent_case_labels
         self.indent_case_blocks = indent_case_blocks
         self.indent_goto_labels = indent_goto_labels
+        self.indent_pp_directives = indent_pp_directives
+        self.pp_indent_width = pp_indent_width
