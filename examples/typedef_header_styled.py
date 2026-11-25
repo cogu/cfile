@@ -29,7 +29,7 @@ struct = C.struct("os_alarm_cfg_tag",
                            C.struct_member("eventMask", "uint32_t"),
                            C.struct_member("initDelayMs", "uint32_t"),
                            C.struct_member("periodMs", "uint32_t")])
-code.append(C.statement(C.declaration(C.typedef("os_alarm_cfg_t", C.declaration(struct)))))
+code.append(C.declaration_statement(C.typedef("os_alarm_cfg_t", C.declaration(struct))))
 code.append(C.blank())
 code.append(C.ifndef_directive("__cplusplus"))
 code.append(C.line("}"))

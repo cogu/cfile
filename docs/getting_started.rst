@@ -83,8 +83,8 @@ Declarations vs. References
 In **cfile**, objects returned by ``C.variable()``, ``C.function()``, ``C.struct()``, and ``C.typedef()``
 represent the underlying C entity:
 
-- **Wrapped in** ``C.declaration(...)``: Emits the full C declaration (including types, qualifiers,
-  struct members, or initializers).
+- **Wrapped in** ``C.declaration(...)`` (or ``C.declaration_statement(...)``): Emits the full C declaration
+  (including types, qualifiers, struct members, or initializers).
 - **Used directly** (or interpolated in an f-string): Emits a reference to the entity's name
   (or a forward declaration in the case of a struct statement).
 
@@ -100,8 +100,8 @@ Variables and Assignments
     var1 = C.variable("var1", "int")
     var2 = C.variable("var2", "int")
 
-    code.append(C.statement(C.declaration(var1)))      # int var1;
-    code.append(C.statement(C.declaration(var2, 0)))   # int var2 = 0;
+    code.append(C.declaration_statement(var1))         # int var1;
+    code.append(C.declaration_statement(var2, 0))      # int var2 = 0;
     code.append(C.statement(C.assignment(var1, var2))) # var1 = var2;
 
     writer = cfile.Writer()
@@ -126,9 +126,9 @@ Structs, Typedefs, and Initializers
     )
     struct_type = C.typedef("my_struct_t", C.declaration(struct))
 
-    code.append(C.statement(C.declaration(struct_type)))
+    code.append(C.declaration_statement(struct_type))
     code.append(C.blank())
-    code.append(C.statement(C.declaration(C.variable("instance", struct_type), [0, 0])))
+    code.append(C.declaration_statement(C.variable("instance", struct_type), [0, 0]))
 
     style = cfile.StyleOptions(break_before_braces=cfile.BreakBeforeBraces.ATTACH)
     writer = cfile.Writer(style)

@@ -61,6 +61,8 @@ Variables, Functions & Declarations
      - Creates a C function entity.
    * - :meth:`~cfile.factory.CFactory.declaration`
      - Wraps a variable, function, struct, or typedef to emit its full C declaration.
+   * - :meth:`~cfile.factory.CFactory.declaration_statement`
+     - Shorthand for ``C.statement(C.declaration(element, content))``.
 
 Statements, Expressions & Control Flow
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -722,6 +722,23 @@ class CFactory:  # pylint: disable=too-many-public-methods
         """
         return core.Declaration(element, content)
 
+    def declaration_statement(self,
+                              element: core.Variable | core.Function | core.DataType,
+                              content: Any | None = None) -> core.Statement:
+        """
+        Creates a semicolon-terminated declaration statement (shorthand for
+        ``C.statement(C.declaration(element, content))``).
+
+        Args:
+            element: The :class:`~cfile.core.Variable`, :class:`~cfile.core.Function`, or
+                :class:`~cfile.core.DataType` to declare.
+            content: Optional initial value when ``element`` is a :class:`~cfile.core.Variable`.
+
+        Returns:
+            A new :class:`~cfile.core.Statement` wrapping a :class:`~cfile.core.Declaration`.
+        """
+        return core.Statement(core.Declaration(element, content))
+
     def if_statement(self,
                      condition: Any | None = None,
                      branch: Union[core.Statement, core.Block, core.Sequence, None] = None) -> core.IfStatement:

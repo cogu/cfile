@@ -16,14 +16,14 @@ example = C.struct("example", members=[
     C.struct_member("addr", C.declaration(addr_struct)),
     C.struct_member("in_u", C.declaration(in_union)),
 ])
-code.append(C.statement(C.declaration(example)))
+code.append(C.declaration_statement(example))
 code.append(C.blank())
 port = 80
 ip_address = "127.0.0.1"
 ex1 = C.variable("ex1", example)
 ex2 = C.variable("ex2", example)
-code.append(C.statement(C.declaration(ex1, [[port], [ip_address.split(".")]])))
-code.append(C.statement(C.declaration(ex2, {"addr": {"port": port}, "in_u": {"a8": ip_address.split(".")}})))
+code.append(C.declaration_statement(ex1, [[port], [ip_address.split(".")]]))
+code.append(C.declaration_statement(ex2, {"addr": {"port": port}, "in_u": {"a8": ip_address.split(".")}}))
 
 style = cfile.StyleOptions(break_before_braces=cfile.BreakBeforeBraces.ATTACH)
 writer = cfile.Writer(style)

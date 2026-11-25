@@ -25,6 +25,7 @@ Notable changes.
 * Automatic preprocessor directive indentation options in `StyleOptions` (`indent_pp_directives: PPDirectiveIndent` and `pp_indent_width`) with top-level include-guard detection
 * Support passing a `Function` object directly to `FunctionCall` / `C.fn_call` with argument count validation
 * Support passing a function body (`Block` or `Sequence`) directly as the second argument (`content`) of `Declaration` / `C.declaration`
+* Convenience factory method `C.declaration_statement(element, content=None)` as shorthand for `C.statement(C.declaration(element, content))`
 * Support `Element` initializers (such as `FunctionCall`) in variable `Declaration`
 * `__str__` helper on `Variable`, `StructMember`, `Function`, `TypeDef`, `NamedLabel`, and `EnumMember` returning the identifier name
 * Style options:

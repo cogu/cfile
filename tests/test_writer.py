@@ -332,6 +332,13 @@ class TestVariableDeclaration(unittest.TestCase):
         output = writer.write_str_elem(element)
         self.assertEqual(output, "int value")
 
+    def test_declaration_statement_shorthand(self):
+        C = cfile.CFactory()
+        writer = cfile.Writer()
+        var = C.variable("count", "int")
+        self.assertEqual("int count;", writer.write_str_elem(C.declaration_statement(var)))
+        self.assertEqual("int count = 42;", writer.write_str_elem(C.declaration_statement(var, 42)))
+
     def test_declare_int_variable(self):
         element = core.Declaration(core.Variable("value", core.Type("int")))
         writer = cfile.Writer(cfile.StyleOptions())

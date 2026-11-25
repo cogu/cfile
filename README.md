@@ -78,7 +78,7 @@ Output
 
 ## Important update about declarations
 
-Starting from version 0.3.2 you need to wrap functions, variables, structs and typedefs inside `C.declaraton` to actually declare them.
+Starting from version 0.3.2 you need to wrap functions, variables, structs and typedefs inside `C.declaration` (or the convenience shorthand `C.declaration_statement`) to actually declare them.
 Before v0.3.2 these elements were implicitly declared when encountered in the code sequence.
 
 Not using `C.declaration` will only print the name when used on variables, functions or typedefs.
@@ -131,7 +131,7 @@ code = C.sequence()
 mystruct = C.struct("mystruct",
                     members=[C.struct_member("field_1", "int"),
                              C.struct_member("field_2", "int")])
-code.append(C.statement(C.declaration(C.typedef("mystruct_t", C.declaration(mystruct)))))
+code.append(C.declaration_statement(C.typedef("mystruct_t", C.declaration(mystruct))))
 writer = cfile.Writer(cfile.StyleOptions(break_before_braces=cfile.BreakBeforeBraces.ATTACH))
 print(writer.write_str(code))
 ```
@@ -157,9 +157,9 @@ struct = C.struct("mystruct",
                   members=[C.struct_member("field_1", "int"),
                            C.struct_member("field_2", "int")])
 struct_type = C.typedef("my_struct_t", C.declaration(struct))
-code.append(C.statement(C.declaration(struct_type)))
+code.append(C.declaration_statement(struct_type))
 code.append(C.blank())
-code.append(C.statement(C.declaration(C.variable("instance", struct_type), [0, 0])))
+code.append(C.declaration_statement(C.variable("instance", struct_type), [0, 0]))
 
 writer = cfile.Writer(cfile.StyleOptions(break_before_braces=cfile.BreakBeforeBraces.ATTACH))
 print(writer.write_str(code))
