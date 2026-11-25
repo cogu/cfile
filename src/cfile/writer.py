@@ -3,39 +3,9 @@ cfile writer
 """
 # pylint: disable=consider-using-with
 from io import StringIO
-from enum import Enum
 from typing import TextIO, Any, Callable
 from cfile import core
 import cfile.style as c_style
-
-
-class ElementType(Enum):
-    """
-    Element types
-    """
-    NONE = 0
-    DIRECTIVE = 1
-    COMMENT = 2
-    TYPE_DECLARATION = 3
-    STRUCT_DECLARATION = 4   # Should this be separate from type declaration?
-    VARIABLE_DECLARATION = 5
-    FUNCTION_DECLARATION = 6
-    TYPEDEF = 7
-    TYPE_INSTANCE = 8
-    STRUCT_INSTANCE = 9
-    VARIABLE_USAGE = 10
-    FUNCTION_CALL = 11
-    STATEMENT = 12
-    BLOCK_START = 13
-    BLOCK_END = 14
-    IF_STATEMENT = 15
-    CASE_LABEL = 16
-    NAMED_LABEL = 17
-    SWITCH_STATEMENT = 18
-    UNION_DECLARATION = 19
-    UNION_INSTANCE = 20
-    ENUM_DECLARATION = 21
-    ENUM_INSTANCE = 22
 
 
 class Formatter:
@@ -156,7 +126,6 @@ class Writer(Formatter):
             "EndifDirective": self._write_endif_directive,
             "Extern": self._write_extern,
         }
-        self.last_element = ElementType.NONE
 
     def write_file(self, sequence: core.Sequence, file_path: str) -> None:
         """
@@ -248,7 +217,8 @@ class Writer(Formatter):
             elif isinstance(elem, core.NamedLabel):
                 self._write_named_label_in_sequence(elem)
             elif isinstance(elem, core.Block):
-                self._write_block_in_sequence(elem)
+                prev_elem = sequence.elements[i - 1] if i > 0 else None
+                self._write_block_in_sequence(elem, prev_elem)
             elif isinstance(elem, core.Line):
                 self._start_line()
                 self._write_line_element(elem)
@@ -294,8 +264,22 @@ class Writer(Formatter):
         self._write_named_label(elem)
         self._eol()
 
-    def _write_block_in_sequence(self, elem: core.Block) -> None:
-        if self.last_element == ElementType.CASE_LABEL:
+    def _write_block_in_sequence(self, elem: core.Block, prev_elem: Any) -> None:
+        prev_is_func_decl = (
+            isinstance(prev_elem, core.Declaration)
+            and isinstance(prev_elem.element, core.Function)
+        )
+        prev_is_case_label = isinstance(prev_elem, (core.SwitchLabel, core.SwitchDefault))
+
+        if prev_is_func_decl:
+            if self.style.brace_wrapping.after_function:
+                self._eol()
+                self._start_line()
+                self._write_block(elem)
+            else:
+                self._write(" ")
+                self._write_block(elem)
+        elif prev_is_case_label:
             if not self.style.brace_wrapping.after_case_label and not self.style.indent_case_blocks:
                 outdented = self.indentation_level > 0
                 if outdented:
@@ -362,7 +346,6 @@ class Writer(Formatter):
             self._write("//" + elem.text)
         else:
             raise NotImplementedError("list of strings not yet supported")
-        self.last_element = ElementType.COMMENT
 
     def _write_block_comment(self, elem: core.BlockComment) -> None:
         """
@@ -378,7 +361,6 @@ class Writer(Formatter):
             self._format_block_comment(lines, False, 1, "")
         else:
             self._format_block_comment(lines, True, elem.width, elem.line_start)
-        self.last_element = ElementType.COMMENT
 
     def _format_block_comment(self, lines: list[str], wrap_text: bool, width: int, line_start: str) -> None:
         self._write(f"/{'*'*width}")
@@ -467,7 +449,6 @@ class Writer(Formatter):
         Writes type declaration
         """
         self._write(self._format_type(elem))
-        self.last_element = ElementType.TYPE_DECLARATION
 
     def _format_type(self, elem: core.Type) -> str:
         parts = []
@@ -510,7 +491,6 @@ class Writer(Formatter):
         Writes variable usage
         """
         self._write(elem.name)
-        self.last_element = ElementType.VARIABLE_USAGE
 
     def _write_variable_declaration(self, elem: core.Variable) -> None:
         """
@@ -569,7 +549,6 @@ class Writer(Formatter):
         if elem.array is not None:
             result += f"[{elem.array}]"
         self._write(result)
-        self.last_element = ElementType.VARIABLE_DECLARATION
 
     def _write_typedef_usage(self, elem: core.TypeDef) -> None:
         """
@@ -636,7 +615,6 @@ class Writer(Formatter):
         if elem.array is not None:
             result += f"[{elem.array}]"
         self._write(result)
-        self.last_element = ElementType.TYPEDEF
 
     def _write_function_usage(self, elem: core.Function) -> None:
         """
@@ -675,7 +653,6 @@ class Writer(Formatter):
         else:
             self._write("void")
         self._write(")")
-        self.last_element = ElementType.FUNCTION_DECLARATION
 
     def _write_block(self, elem: core.Block) -> None:
         """
@@ -696,20 +673,8 @@ class Writer(Formatter):
                 self._write_ending_brace()
 
     def _write_starting_brace(self) -> None:
-        handled = False
-        if self.last_element == ElementType.FUNCTION_DECLARATION:
-            handled = True
-            if self.style.brace_wrapping.after_function:
-                self._eol()
-                self._start_line()
-                self._write("{")
-                self._eol()
-            else:
-                self._write(" {")
-                self._eol()
-        if not handled:
-            self._write("{")
-            self._eol()
+        self._write("{")
+        self._eol()
 
     def _write_ending_brace(self) -> None:
         self._start_line()
@@ -719,7 +684,6 @@ class Writer(Formatter):
     def _write_statement(self, elem: core.Statement) -> None:
         if isinstance(elem, core.GotoStatement):
             self._write(f"goto {elem.label};")
-            self.last_element = ElementType.STATEMENT
             return
         assert len(elem.parts) != 0
         if len(elem.parts) > 1:
@@ -730,7 +694,6 @@ class Writer(Formatter):
         else:
             self._write_expression(elem.parts[0])
         self._write(";")
-        self.last_element = ElementType.STATEMENT
 
     def _write_expression(self, elem: Any) -> None:
         if isinstance(elem, str):
@@ -785,7 +748,6 @@ class Writer(Formatter):
                     self._start_line()
             else:
                 raise NotImplementedError(str(type(branch)))
-        self.last_element = ElementType.IF_STATEMENT
 
     def _write_condition(self, cond: Any) -> None:
         if isinstance(cond, core.Sequence):
@@ -818,17 +780,14 @@ class Writer(Formatter):
 
     def _write_named_label(self, elem: core.NamedLabel) -> None:
         self._write(f"{elem.name}:")
-        self.last_element = ElementType.NAMED_LABEL
 
     def _write_switch_label(self, elem: core.SwitchLabel) -> None:
         self._write("case ")
         self._write_expression(elem.value)
         self._write(":")
-        self.last_element = ElementType.CASE_LABEL
 
     def _write_switch_default(self, elem: core.SwitchDefault) -> None:  # pylint: disable=unused-argument
         self._write("default:")
-        self.last_element = ElementType.CASE_LABEL
 
     def _write_switch_statement(self, elem: core.SwitchStatement) -> None:
         self._write("switch (")
@@ -860,7 +819,6 @@ class Writer(Formatter):
             self._eol()
         else:
             raise NotImplementedError(str(type(elem.body)))
-        self.last_element = ElementType.SWITCH_STATEMENT
 
     def _write_func_call(self, elem: core.FunctionCall) -> None:
         self._write(f"{elem.name}(")
@@ -902,7 +860,6 @@ class Writer(Formatter):
             self._dedent()
         self._start_line()
         self._write("}")
-        self.last_element = ElementType.STRUCT_DECLARATION
 
     def _write_union_usage(self, elem: core.Union) -> None:
         """
@@ -936,7 +893,6 @@ class Writer(Formatter):
             self._dedent()
         self._start_line()
         self._write("}")
-        self.last_element = ElementType.UNION_DECLARATION
 
     def _write_enum_usage(self, elem: core.Enum) -> None:
         """
@@ -978,7 +934,6 @@ class Writer(Formatter):
             self._dedent()
         self._start_line()
         self._write("}")
-        self.last_element = ElementType.ENUM_DECLARATION
 
     def _write_enum_member_declaration(self, elem: core.EnumMember) -> None:
         """
@@ -1049,27 +1004,21 @@ class Writer(Formatter):
             self._write(f'#include <{elem.path_to_file}>')
         else:
             self._write(f'#include "{elem.path_to_file}"')
-        self.last_element = ElementType.DIRECTIVE
 
     def _write_define_directive(self, elem: core.DefineDirective) -> None:
         if elem.right is not None:
             self._write(f"#{' '*elem.adjust}define {elem.left} {elem.right}")
         else:
             self._write(f"#{' '*elem.adjust}define {elem.left}")
-        self.last_element = ElementType.DIRECTIVE
 
     def _write_ifdef_directive(self, elem: core.IfdefDirective) -> None:
         self._write(f"#{' '*elem.adjust}ifdef {elem.identifier}")
-        self.last_element = ElementType.DIRECTIVE
 
     def _write_ifndef_directive(self, elem: core.IfndefDirective) -> None:
         self._write(f"#{' '*elem.adjust}ifndef {elem.identifier}")
-        self.last_element = ElementType.DIRECTIVE
 
     def _write_endif_directive(self, elem: core.EndifDirective) -> None:
         self._write(f"#{' '*elem.adjust}endif")
-        self.last_element = ElementType.DIRECTIVE
 
     def _write_extern(self, elem: core.Extern) -> None:
         self._write(f'extern "{elem.language}"')
-        self.last_element = ElementType.DIRECTIVE
