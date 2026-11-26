@@ -29,30 +29,67 @@ class TestWhitespace(unittest.TestCase):
 class TestComment(unittest.TestCase):
 
     def test_line_comment(self):
-        element = core.LineComment(" Comment")
+        element = core.LineComment("Comment")
         writer = cfile.Writer(cfile.StyleOptions())
         output = writer.write_str_elem(element)
         self.assertEqual(output, "// Comment")
 
+    def test_line_comment_zero_margin_and_padding(self):
+        C = cfile.CFactory()
+        line = C.line([
+            C.statement(C.declaration(C.variable("x", "int"))),
+            C.line_comment("comment-text", padding=0, margin=0),
+        ])
+        writer = cfile.Writer()
+        self.assertEqual("int x;//comment-text", writer.write_str_elem(line))
+
+    def test_line_comment_multi_line_and_absolute_positioning(self):
+        C = cfile.CFactory()
+        writer = cfile.Writer()
+        multi = C.line_comment(["Line 1", "Line 2"], padding=4, absolute=True)
+        self.assertEqual("    // Line 1\n    // Line 2", writer.write_str_elem(multi))
+
+        code = C.sequence([
+            [C.statement("int a = 1"), C.line_comment("aligned", padding=20, absolute=True)],
+            [C.statement("int longer_var = 2"), C.line_comment("aligned", padding=20, absolute=True)],
+            [C.statement("int very_long_variable_name = 3"), C.line_comment("fallback", padding=20, absolute=True)],
+        ])
+        expected = "\n".join([
+            "int a = 1;          // aligned",
+            "int longer_var = 2; // aligned",
+            "int very_long_variable_name = 3; // fallback",
+        ])
+        self.assertEqual(expected, writer.write_str(code))
+
     def test_single_line_block_comment(self):
-        element = core.BlockComment(" Comment ")
+        element = core.BlockComment("Comment")
         writer = cfile.Writer(cfile.StyleOptions())
         output = writer.write_str_elem(element)
         self.assertEqual(output, "/* Comment */")
 
     def test_multi_line_block_comment(self):
-        comment = """ Line 1
+        comment = """Line 1
 Line 2
 Line 3
-Line 4 """
+Line 4"""
         element = core.BlockComment(comment)
         writer = cfile.Writer(cfile.StyleOptions())
         output = writer.write_str_elem(element)
         expected = """/* Line 1
-Line 2
-Line 3
-Line 4 */"""
+   Line 2
+   Line 3
+   Line 4 */"""
         self.assertEqual(expected, output)
+
+    def test_multi_line_block_comment_absolute_padding(self):
+        C = cfile.CFactory()
+        comment = C.block_comment(["comment line 1", "comment line 2"], padding=6, absolute=True)
+        writer = cfile.Writer()
+        expected = "\n".join([
+            "      /* comment line 1",
+            "         comment line 2 */",
+        ])
+        self.assertEqual(expected, writer.write_str_elem(comment))
 
     def test_block_comment_with_user_defined_width_and_line_start__str_input(self):
         comment = """Line 1
@@ -206,7 +243,7 @@ class TestPreprocessor(unittest.TestCase):
             C.else_directive(),
             C.include_directive("unistd.h", sys=True),
             C.endif_directive(),
-            [C.endif_directive(), C.line_comment(" OS_MACRO_H")],
+            [C.endif_directive(), C.line_comment("OS_MACRO_H")],
         ])
         opts = cfile.StyleOptions(
             indent_pp_directives=style.PPDirectiveIndent.AFTER_HASH,
@@ -575,7 +612,7 @@ class TestSequence(unittest.TestCase):
     def test_variable_declaration_and_comment_using_line_element(self):
         seq = core.Sequence()
         seq.append(core.Line([core.Statement(core.Declaration(core.Variable("a", "int"))),
-                              core.BlockComment(" Comment ")]))
+                              core.BlockComment("Comment")]))
         writer = cfile.Writer(cfile.StyleOptions())
         output = writer.write_str(seq)
         expected = "int a; /* Comment */"
@@ -583,7 +620,7 @@ class TestSequence(unittest.TestCase):
 
     def test_variable_declaration_and_comment_using_python_list(self):
         seq = core.Sequence()
-        seq.append([core.Statement(core.Declaration(core.Variable("a", "int"))), core.BlockComment(" Comment ")])
+        seq.append([core.Statement(core.Declaration(core.Variable("a", "int"))), core.BlockComment("Comment")])
         writer = cfile.Writer(cfile.StyleOptions())
         output = writer.write_str(seq)
         expected = "int a; /* Comment */"
@@ -810,7 +847,7 @@ class TestLine(unittest.TestCase):
                              core.LineComment("Comment")])
         writer = cfile.Writer(cfile.StyleOptions())
         output = writer.write_str_elem(element, trim_end=False)
-        self.assertEqual(output, "int value; //Comment\n")
+        self.assertEqual(output, "int value; // Comment\n")
 
 
 class TestExtern(unittest.TestCase):
@@ -821,7 +858,7 @@ class TestExtern(unittest.TestCase):
         code.append(core.Line(core.Extern("C")))
         code.append(core.Line("{"))
         code.append(core.Line("}"))
-        code.append([core.EndifDirective(), core.LineComment(" __clpusplus")])
+        code.append([core.EndifDirective(), core.LineComment("__clpusplus")])
         writer = cfile.Writer(cfile.StyleOptions())
         output = writer.write_str(code)
         expected = """#ifdef __cplusplus

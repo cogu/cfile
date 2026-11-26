@@ -44,6 +44,7 @@ Notable changes.
 ### Changed
 
 * Retire `core.Block` and `C.block()` in favor of `core.Sequence` and `C.sequence()` (brace wrapping is determined automatically from context)
+* Replace `adjust` on `Comment`, `LineComment` (`C.line_comment`), and `BlockComment` (`C.block_comment`) with `padding: int = 1`, `margin: int = 1`, and `absolute: bool = False`, plus multi-line alignment support
 * Rename `func_call` to `fn_call` and `func_return` to `fn_return` (keeping old names as aliases)
 * Refactor preprocessor directive factory methods and indentation:
   * Rename existing directive factory methods to `*_directive` (`include_directive`, `define_directive`, `ifdef_directive`, `ifndef_directive`, `endif_directive`)

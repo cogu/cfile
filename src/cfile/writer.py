@@ -27,11 +27,13 @@ class Formatter:
         self.indentation_str: str = ""
         self.line_number: int = 0
         self.column: int = 0
+        self.has_content_on_line: bool = False
 
     def _str_open(self) -> None:
         self.fh = StringIO()
         self.line_number = 1
         self.column = 0
+        self.has_content_on_line = False
         self.indentation_level = 0
         self.indentation_str = ""
 
@@ -40,6 +42,7 @@ class Formatter:
         self.file_path = file_path
         self.line_number = 1
         self.column = 0
+        self.has_content_on_line = False
         self.indentation_level = 0
         self.indentation_str = ""
 
@@ -61,19 +64,23 @@ class Formatter:
 
     def _start_line(self) -> None:
         self.fh.write(self.indentation_str)
+        self.column += len(self.indentation_str)
 
     def _write(self, text: str) -> None:
         self.fh.write(text)
         self.column += len(text)
+        if text:
+            self.has_content_on_line = True
 
     def _write_line(self, text: str) -> None:
-        self.fh.write(text)
+        self._write(text)
         self._eol()
 
     def _eol(self) -> None:
         self.fh.write("\n")
         self.line_number += 1
         self.column = 0
+        self.has_content_on_line = False
 
 
 class Writer(Formatter):
@@ -223,7 +230,7 @@ class Writer(Formatter):
         for i, elem in enumerate(sequence.elements):
             if isinstance(elem, list):
                 tmp = core.Line(elem)
-                self._start_line()
+                self._start_line_for_element(tmp)
                 self._write_line_element(tmp)
             elif isinstance(elem, core.Function):
                 self._start_line()
@@ -233,9 +240,12 @@ class Writer(Formatter):
                 self._write_statement(elem)
                 self._eol()
             elif isinstance(elem, core.LineComment):
-                self._start_line()
+                self._start_line_for_element(elem)
                 self._write_line_comment(elem)
                 self._eol()
+            elif isinstance(elem, core.BlockComment):
+                self._start_line_for_element(elem)
+                self._write_block_comment(elem)
             elif isinstance(elem, (core.SwitchLabel, core.SwitchDefault)):
                 next_is_block = (i + 1 < num_elements) and isinstance(sequence.elements[i + 1], core.Sequence)
                 self._write_case_element_in_sequence(elem, next_is_block)
@@ -245,7 +255,7 @@ class Writer(Formatter):
                 prev_elem = sequence.elements[i - 1] if i > 0 else None
                 self._write_block_in_sequence(elem, prev_elem)
             elif isinstance(elem, core.Line):
-                self._start_line()
+                self._start_line_for_element(elem)
                 self._write_line_element(elem)
             elif isinstance(elem, core.Directive):
                 if self._is_include_guard(sequence, i):
@@ -261,6 +271,15 @@ class Writer(Formatter):
                     write_method(elem)
                 else:
                     raise NotImplementedError(f"Found no writer for element {class_name}")
+
+    def _start_line_for_element(self, elem: core.Element) -> None:
+        if isinstance(elem, core.Comment) and elem.absolute:
+            return
+        if isinstance(elem, core.Line) and len(elem.parts) > 0:
+            first_part = elem.parts[0]
+            if isinstance(first_part, core.Comment) and first_part.absolute:
+                return
+        self._start_line()
 
     def _is_include_guard(self, sequence: core.Sequence, index: int) -> bool:
         if len(self._pp_stack) != 0 or index + 1 >= len(sequence.elements):
@@ -377,45 +396,63 @@ class Writer(Formatter):
         """
         self._write(self.white_space_char * white_space.width)
 
+    def _write_comment_padding(self, elem: core.Comment) -> None:
+        if elem.absolute:
+            if self.has_content_on_line:
+                if self.column < elem.padding:
+                    self._write(" " * (elem.padding - self.column))
+                else:
+                    self._write(" ")
+            elif self.column < elem.padding:
+                self._write(" " * (elem.padding - self.column))
+        elif self.has_content_on_line:
+            self._write(" " * elem.padding)
+
+    def _extract_comment_lines(self, text: str | list[str]) -> list[str]:
+        if isinstance(text, str):
+            return text.splitlines() if text else [""]
+        if isinstance(text, list):
+            return text if text else [""]
+        raise TypeError("Unsupported type", str(type(text)))
+
     def _write_line_comment(self, elem: core.LineComment) -> None:
         """
         Writes line comment
         """
-        if self.column > 0:
-            self._write(" " * elem.adjust)
-        if isinstance(elem.text, str):
-            self._write("//" + elem.text)
-        else:
-            raise NotImplementedError("list of strings not yet supported")
+        self._write_comment_padding(elem)
+        border_col = self.column
+        margin_str = " " * elem.margin
+        lines = self._extract_comment_lines(elem.text)
+        for i, line in enumerate(lines):
+            if i > 0:
+                self._eol()
+                self._write(" " * border_col)
+            self._write(f"//{margin_str}{line}")
 
     def _write_block_comment(self, elem: core.BlockComment) -> None:
         """
         Writes block comment
         """
-        if self.column > 0:
-            self._write(" " * elem.adjust)
-        if isinstance(elem.text, str):
-            lines = elem.text.splitlines()
-        elif isinstance(elem.text, list):
-            lines = elem.text
-        else:
-            raise TypeError("Unsupported type", str(type(elem.text)))
+        self._write_comment_padding(elem)
+        border_col = self.column
+        lines = self._extract_comment_lines(elem.text)
         if elem.width == 0:
-            self._format_block_comment(lines, False, 1, "")
+            margin_str = " " * elem.margin
+            if len(lines) == 1:
+                self._write(f"/*{margin_str}{lines[0]}{margin_str}*/")
+            else:
+                text_col = border_col + 2 + elem.margin
+                cont_prefix = " " * text_col
+                self._write_line(f"/*{margin_str}{elem.line_start}{lines[0]}")
+                for line in lines[1:-1]:
+                    self._write_line(f"{cont_prefix}{elem.line_start}{line}")
+                self._write(f"{cont_prefix}{elem.line_start}{lines[-1]}{margin_str}*/")
         else:
-            self._format_block_comment(lines, True, elem.width, elem.line_start)
-
-    def _format_block_comment(self, lines: list[str], wrap_text: bool, width: int, line_start: str) -> None:
-        self._write(f"/{'*'*width}")
-        if wrap_text:
-            self._eol()
+            line_prefix = " " * border_col
+            self._write_line(f"/{'*'*elem.width}")
             for line in lines:
-                self._write_line(line_start + line)
-            self._write_line(f"{'*'*(width+1)}/")
-        else:
-            for line in lines[:-1]:
-                self._write_line(line_start + line)
-            self._write(lines[-1] + f"{'*'*width}/")
+                self._write_line(f"{line_prefix}{elem.line_start}{line}")
+            self._write_line(f"{line_prefix}{'*'*(elem.width+1)}/")
 
     def _write_declaration(self, elem: core.Declaration) -> None:
         """

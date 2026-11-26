@@ -8,7 +8,7 @@ extern "C"
 
 #include <stdint.h>
 
-struct os_task_tag; //Forward declaration
+struct os_task_tag; // Forward declaration
 
 typedef struct os_alarm_cfg_tag
 {

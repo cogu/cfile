@@ -59,22 +59,33 @@ class CFactory:  # pylint: disable=too-many-public-methods
         """
         return core.Whitespace(width)
 
-    def line_comment(self, text: str, adjust: int = 1) -> core.LineComment:
+    def line_comment(self,
+                     text: str | list[str],
+                     padding: int = 1,
+                     margin: int = 1,
+                     absolute: bool = False) -> core.LineComment:
         """
-        Creates a single-line comment (``// ...``).
+        Creates a ``//`` comment.
 
         Args:
-            text: The comment text following ``//``.
-            adjust: Number of leading spaces to insert when placed after another element on the same line.
+            text: Comment text as a single string (may be multi-line) or a list of line strings.
+            padding: Number of spaces before ``//`` when placed after another element on the
+                same line (or the number of characters from the start of the line before ``//``
+                when ``absolute=True``).
+            margin: Number of spaces between ``//`` and the comment text.
+            absolute: When ``True``, ``padding`` is measured from the start of the line rather
+                than from the end of the preceding element.
 
         Returns:
             A new :class:`~cfile.core.LineComment` instance.
         """
-        return core.LineComment(text, adjust)
+        return core.LineComment(text, padding=padding, margin=margin, absolute=absolute)
 
     def block_comment(self,
                       text: str | list[str],
-                      adjust: int = 1,
+                      padding: int = 1,
+                      margin: int = 1,
+                      absolute: bool = False,
                       width: int = 0,
                       line_start: str = "") -> core.BlockComment:
         """
@@ -82,15 +93,27 @@ class CFactory:  # pylint: disable=too-many-public-methods
 
         Args:
             text: Comment text as a single string (may be multi-line) or a list of line strings.
-            adjust: Number of leading spaces to insert when placed after another element on the same line.
+            padding: Number of spaces before ``/*`` when placed after another element on the
+                same line (or the number of characters from the start of the line before ``/*``
+                when ``absolute=True``).
+            margin: Number of spaces between ``/*`` / ``*/`` and the comment text when ``width == 0``.
+            absolute: When ``True``, ``padding`` is measured from the start of the line rather
+                than from the end of the preceding element.
             width: When ``> 0``, prints a banner of ``width`` asterisks on the opening and closing lines
-                and places ``text`` on the lines in between.
+                and places ``text`` on the lines in between (ignoring ``margin``).
             line_start: Prefix prepended to each inner line when ``width > 0`` (e.g. ``"* "``).
 
         Returns:
             A new :class:`~cfile.core.BlockComment` instance.
         """
-        return core.BlockComment(text, adjust, width, line_start)
+        return core.BlockComment(
+            text,
+            padding=padding,
+            margin=margin,
+            absolute=absolute,
+            width=width,
+            line_start=line_start,
+        )
 
     def sequence(self, elements: Any | list[Any] | None = None) -> core.Sequence:
         """

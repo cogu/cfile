@@ -33,8 +33,8 @@ code.append(C.declaration_statement(C.typedef("os_alarm_cfg_t", C.declaration(st
 code.append(C.blank())
 code.append(C.ifndef_directive("__cplusplus"))
 code.append(C.line("}"))
-code.append([C.endif_directive(), C.line_comment(" __cplusplus")])
-code.append([C.endif_directive(), C.line_comment(" " + INCLUDE_GUARD_TEXT)])
+code.append([C.endif_directive(), C.line_comment("__cplusplus")])
+code.append([C.endif_directive(), C.line_comment(INCLUDE_GUARD_TEXT)])
 style = cfile.StyleOptions(break_before_braces=cfile.BreakBeforeBraces.ATTACH,
                            pointer_alignment=cfile.Alignment.RIGHT)
 writer = cfile.Writer(style)

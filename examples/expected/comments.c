@@ -1,4 +1,4 @@
-// Simple line Comment 
+// Simple line Comment
 
 /* Simple Block Comment */
 

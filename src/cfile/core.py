@@ -261,41 +261,60 @@ class Extern(Element):
 
 class Comment(Element):
     """
-    Comment base
+    Comment base class.
 
     Args:
         text: Comment text as a string or list of strings.
-        adjust: Adds spaces before comment begins to allow right-adjustment.
+        padding: Number of spaces before the comment border (``//`` or ``/*``).
+            In relative mode (``absolute=False``), specifies the number of spaces
+            between a preceding element on the same line and the comment border.
+            In absolute mode (``absolute=True``), specifies the number of characters
+            from the start of the line before the comment border.
+        margin: Number of spaces between the comment border and the comment text.
+        absolute: When ``True``, ``padding`` is measured from the start of the line
+            rather than from the end of the preceding element.
     """
-    def __init__(self, text: str | list[str], adjust: int = 1) -> None:
+    def __init__(self,
+                 text: str | list[str],
+                 padding: int = 1,
+                 margin: int = 1,
+                 absolute: bool = False) -> None:
         self.text = text
-        self.adjust = adjust
+        self.padding = padding
+        self.margin = margin
+        self.absolute = absolute
 
 
 class BlockComment(Comment):
     """
-    Block Comment
+    Block comment (``/* ... */``).
 
     Args:
         text: Comment text as a string or list of strings.
-        adjust: Adds spaces before comment begins to allow right-adjustment.
-        width: When > 0, sets the number of asterisks used on first and last line
-            and places the text between the first and last line.
-        line_start: Combine with width > 0. Puts this string at the beginning of
-            each line inside the comment.
+        padding: Number of spaces before ``/*`` (measured from the preceding element
+            when ``absolute=False``, or in characters from the start of the line when
+            ``absolute=True``).
+        margin: Number of spaces inside ``/*`` and ``*/`` when ``width == 0``.
+        absolute: When ``True``, ``padding`` is measured from the start of the line.
+        width: When ``> 0``, sets the number of asterisks used on the opening and closing lines
+            and places ``text`` on the lines in between (ignoring ``margin``).
+        line_start: Prefix placed at the beginning of each inner line when ``width > 0``.
     """
     def __init__(self,
                  text: str | list[str],
-                 adjust: int = 1, width: int = 0,
-                 line_start: str = "", ) -> None:
-        super().__init__(text, adjust)
+                 padding: int = 1,
+                 margin: int = 1,
+                 absolute: bool = False,
+                 width: int = 0,
+                 line_start: str = "") -> None:
+        super().__init__(text, padding=padding, margin=margin, absolute=absolute)
         self.width = width
         self.line_start = line_start
 
 
 class LineComment(Comment):
     """
-    Line Comment
+    Single-line or multi-line ``//`` comment.
     """
 
 
