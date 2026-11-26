@@ -9,15 +9,18 @@ code = C.sequence()
 n = C.variable("n", "int")
 sum_var = C.variable("sum", "int")
 i = C.variable("i", "int")
+j = C.variable("j", "int")
 
 compute_fn = C.function("compute_sum", "int", params=[n])
 body = C.block([
     C.declaration_statement(sum_var, 0),
     C.for_statement(
-        C.declaration(i, 0),
+        C.multi_declaration((i, 0), (j, 0)),
         f"{i} < {n}",
-        f"{i}++",
-        C.sequence(C.statement(f"{sum_var} += {i}")),
+        C.multi_statement(f"{i}++", f"{j}+=2"),
+        C.sequence([
+            [C.statement(f"{sum_var} += {i} + {j}"), C.line_comment("increment variable")]
+        ]),
     ),
     C.while_statement(
         f"{sum_var} > 100",

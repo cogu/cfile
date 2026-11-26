@@ -1431,6 +1431,59 @@ class TestLoops(unittest.TestCase):
         no_init = C.for_statement(condition=f"{i} < 10", update=f"{i}++", body=C.statement(C.fn_call("step", i)))
         self.assertEqual("for (; i < 10; i++) step(i);", attach_writer.write_str_elem(no_init))
 
+    def test_multi_declaration_and_multi_statement_in_sequence_and_for_loop(self):
+        C = cfile.CFactory()
+        i = C.variable("i", "int")
+        j = C.variable("j", "int")
+        k = C.variable("k", "int", pointer=True)
+        writer = cfile.Writer()
+
+        decl_stmt = C.multi_declaration_statement((i, 0), (j, 0), (k, "NULL"))
+        self.assertEqual("int i = 0, j = 0, *k = NULL;", writer.write_str_elem(decl_stmt))
+
+        mixed_decl = C.multi_declaration_statement(i, C.declaration(j, 1), (k, "NULL"))
+        self.assertEqual("int i, j = 1, *k = NULL;", writer.write_str_elem(mixed_decl))
+
+        multi_stmt = C.multi_statement(C.assignment(i, 2), C.assignment(j, 3))
+        self.assertEqual("i = 2, j = 3;", writer.write_str_elem(multi_stmt))
+
+        attach_writer = cfile.Writer(cfile.StyleOptions(break_before_braces=style.BreakBeforeBraces.ATTACH))
+        for_with_multi_stmt = C.for_loop(
+            C.multi_statement(C.assignment(i, 0), C.assignment(j, 0)),
+            f"{i} < 10",
+            C.multi_statement(f"{i}++", f"{j}--"),
+            C.sequence(C.statement(C.fn_call("use", [i, j]))),
+        )
+        expected_for_stmt = "\n".join([
+            "for (i = 0, j = 0; i < 10; i++, j--) {",
+            "    use(i, j);",
+            "}",
+        ])
+        self.assertEqual(expected_for_stmt, attach_writer.write_str_elem(for_with_multi_stmt))
+
+        for_with_multi_decl = C.for_loop(
+            C.multi_declaration((i, 0), (j, 0)),
+            f"{i} < 10",
+            f"{i}++",
+            C.sequence(C.statement(C.fn_call("use", [i, j]))),
+        )
+        expected_for_decl = "\n".join([
+            "for (int i = 0, j = 0; i < 10; i++) {",
+            "    use(i, j);",
+            "}",
+        ])
+        self.assertEqual(expected_for_decl, attach_writer.write_str_elem(for_with_multi_decl))
+
+    def test_multi_declaration_incompatible_types_raises(self):
+        C = cfile.CFactory()
+        i = C.variable("i", "int")
+        f = C.variable("f", "float")
+        s = C.variable("s", "int", static=True)
+        with self.assertRaises(ValueError):
+            C.multi_declaration(i, f)
+        with self.assertRaises(ValueError):
+            C.multi_declaration(i, s)
+
 
 if __name__ == '__main__':
     unittest.main()

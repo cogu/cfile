@@ -99,6 +99,7 @@ class Writer(Formatter):
             "Variable": self._write_variable_usage,
             "Function": self._write_function_usage,
             "Declaration": self._write_declaration,
+            "MultiDeclaration": self._write_multi_declaration,
             "Assignment": self._write_assignment,
             "StringLiteral": self._write_string_literal,
             "FunctionReturn": self._write_func_return,
@@ -445,6 +446,42 @@ class Writer(Formatter):
             self._write(" = ")
             self._write_initializer(elem.init_value)
 
+    def _write_multi_declaration(self, elem: core.MultiDeclaration) -> None:
+        """
+        Writes a multi-variable declaration sharing a common base type
+        """
+        for i, decl in enumerate(elem.declarations):
+            if i == 0:
+                self._write_declaration(decl)
+            else:
+                self._write(", ")
+                assert isinstance(decl.element, core.Variable)
+                self._write_secondary_variable_declarator(decl.element)
+                if decl.init_value is not None:
+                    self._write(" = ")
+                    self._write_initializer(decl.init_value)
+
+    def _write_secondary_variable_declarator(self, elem: core.Variable) -> None:
+        result = ""
+        if elem.pointer:
+            if elem.const:
+                if self.style.space_around_pointer_qualifiers == c_style.SpaceLocation.DEFAULT:
+                    if self.style.pointer_alignment == c_style.Alignment.RIGHT:
+                        result += "*const "
+                    else:
+                        result += "* const "
+                else:
+                    raise NotImplementedError("Only default space location supported for pointer qualifiers")
+            else:
+                if self.style.pointer_alignment == c_style.Alignment.MIDDLE:
+                    result += "* "
+                else:
+                    result += "*"
+        result += elem.name
+        if elem.array is not None:
+            result += f"[{elem.array}]"
+        self._write(result)
+
     def _write_initializer(self, value: Any) -> None:
         """
         Writes initializer
@@ -736,7 +773,7 @@ class Writer(Formatter):
         if len(elem.parts) > 1:
             for i, part in enumerate(elem.parts):
                 if i:
-                    self._write(" ")
+                    self._write(", ")
                 self._write_expression(part)
         else:
             self._write_expression(elem.parts[0])
@@ -933,7 +970,7 @@ class Writer(Formatter):
     def _write_for_statement(self, elem: core.ForStatement) -> None:
         self._write("for (")
         if elem.init is not None:
-            self._write_condition(elem.init)
+            self._write_for_clause(elem.init)
         self._write(";")
         if elem.condition is not None:
             self._write(" ")
@@ -941,9 +978,23 @@ class Writer(Formatter):
         self._write(";")
         if elem.update is not None:
             self._write(" ")
-            self._write_condition(elem.update)
+            self._write_for_clause(elem.update)
         self._write(")")
         self._write_loop_body(elem.body)
+
+    def _write_for_clause(self, clause: Any) -> None:
+        if isinstance(clause, core.Sequence):
+            for i, part in enumerate(clause.elements):
+                if i > 0:
+                    self._write(", ")
+                self._write_expression(part)
+        elif isinstance(clause, list):
+            for i, part in enumerate(clause):
+                if i > 0:
+                    self._write(", ")
+                self._write_expression(part)
+        else:
+            self._write_expression(clause)
 
     def _write_func_call(self, elem: core.FunctionCall) -> None:
         self._write(f"{elem.name}(")

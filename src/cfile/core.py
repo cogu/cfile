@@ -847,6 +847,67 @@ class Declaration(Element):
                 raise ValueError("content only allowed for Variable or Function declarations")
 
 
+def _are_data_types_compatible(first: DataType | Declaration, second: DataType | Declaration) -> bool:
+    if isinstance(first, Type) and isinstance(second, Type):
+        same_qualifiers = (
+            first.const == second.const
+            and first.volatile == second.volatile
+            and first.pointer == second.pointer
+            and first.array == second.array
+        )
+        if isinstance(first.base_type, str) and isinstance(second.base_type, str):
+            return same_qualifiers and first.base_type == second.base_type
+        if isinstance(first.base_type, Type) and isinstance(second.base_type, Type):
+            return same_qualifiers and _are_data_types_compatible(first.base_type, second.base_type)
+        return False
+    if type(first) is type(second) and isinstance(first, (Struct, Union, Enum, TypeDef)):
+        assert isinstance(second, (Struct, Union, Enum, TypeDef))
+        return first is second or (first.name is not None and first.name == second.name)
+    return first is second
+
+
+class MultiDeclaration(Element):
+    """
+    A multi-variable declaration sharing a common base type (e.g. ``int i = 0, j = 0, *k = NULL``).
+
+    Each item may be a :class:`Variable`, a ``(Variable, init_value)`` 2-tuple,
+    or a :class:`Declaration` wrapping a :class:`Variable`.
+    """
+    def __init__(self, *items: Variable | Declaration | tuple[Variable, Any]) -> None:
+        if len(items) == 0:
+            raise ValueError("MultiDeclaration requires at least one variable")
+        self.declarations: list[Declaration] = []
+        for item in items:
+            if isinstance(item, Variable):
+                self.declarations.append(Declaration(item))
+            elif isinstance(item, Declaration):
+                if not isinstance(item.element, Variable):
+                    raise TypeError("MultiDeclaration only supports Variable declarations")
+                self.declarations.append(item)
+            elif isinstance(item, tuple) and len(item) == 2 and isinstance(item[0], Variable):
+                self.declarations.append(Declaration(item[0], item[1]))
+            else:
+                raise TypeError(
+                    f"Expected Variable, (Variable, init_value), or Declaration, got {str(type(item))}"
+                )
+
+        first_var = self.declarations[0].element
+        assert isinstance(first_var, Variable)
+        if len(self.declarations) > 1 and isinstance(first_var.data_type, Type) and first_var.data_type.pointer:
+            raise ValueError(
+                "Pointer flag on MultiDeclaration variables must be set on Variable(pointer=True), not Type"
+            )
+        for decl in self.declarations[1:]:
+            var = decl.element
+            assert isinstance(var, Variable)
+            if (var.static != first_var.static
+                    or var.extern != first_var.extern
+                    or not _are_data_types_compatible(first_var.data_type, var.data_type)):
+                raise ValueError(
+                    "All variables in MultiDeclaration must share the same base data type and storage class"
+                )
+
+
 class FunctionCall(Element):
     """
     Function call expression
@@ -927,12 +988,18 @@ class Statement(Element):
     A statement can contain one or more expressions
     """
     def __init__(self, expression: Any) -> None:
-        parts = []
+        self.parts: tuple[str | Element, ...]
+        parts: list[str | Element] = []
         if isinstance(expression, (list, tuple)):
             for part in expression:
-                parts.append(self._check_and_convert(part))
+                if isinstance(part, Statement) and not isinstance(part, GotoStatement):
+                    parts.extend(part.parts)
+                else:
+                    parts.append(self._check_and_convert(part))
         else:
             parts.append(self._check_and_convert(expression))
+        if len(parts) == 0:
+            raise ValueError("Statement requires at least one expression")
         self.parts = tuple(parts)
 
     def _check_and_convert(self, elem: Any) -> str | Element:

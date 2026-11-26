@@ -602,6 +602,25 @@ class CFactory:  # pylint: disable=too-many-public-methods
         """
         return core.Statement(expression)
 
+    def multi_statement(self, *expressions: Any) -> core.Statement:
+        """
+        Creates a semicolon-terminated statement containing multiple comma-separated
+        expressions (e.g. ``i = 2, j = 3;``).
+
+        When passed to the ``init`` or ``update`` clause of :meth:`for_statement` /
+        :meth:`for_loop`, the trailing semicolon is omitted automatically.
+
+        Args:
+            *expressions: Two or more expressions (or :class:`~cfile.core.Element` objects)
+                to chain with commas.
+
+        Returns:
+            A new :class:`~cfile.core.Statement` instance.
+        """
+        if len(expressions) == 0:
+            raise ValueError("multi_statement requires at least one expression")
+        return core.Statement(list(expressions))
+
     def assignment(self, lhs: Any, rhs: Any) -> core.Assignment:
         """
         Creates an assignment expression (``<lhs> = <rhs>``).
@@ -738,6 +757,44 @@ class CFactory:  # pylint: disable=too-many-public-methods
             A new :class:`~cfile.core.Statement` wrapping a :class:`~cfile.core.Declaration`.
         """
         return core.Statement(core.Declaration(element, content))
+
+    def multi_declaration(
+        self,
+        *items: core.Variable | core.Declaration | tuple[core.Variable, Any],
+    ) -> core.MultiDeclaration:
+        """
+        Creates a multi-variable declaration sharing a common base type
+        (e.g. ``int i = 0, j = 0, *k = NULL``).
+
+        All variables must share the same base data type and storage class.
+
+        Args:
+            *items: Variables to declare. Each item may be a :class:`~cfile.core.Variable`,
+                a ``(Variable, init_value)`` 2-tuple, or a :class:`~cfile.core.Declaration`
+                wrapping a :class:`~cfile.core.Variable`.
+
+        Returns:
+            A new :class:`~cfile.core.MultiDeclaration` instance.
+        """
+        return core.MultiDeclaration(*items)
+
+    def multi_declaration_statement(
+        self,
+        *items: core.Variable | core.Declaration | tuple[core.Variable, Any],
+    ) -> core.Statement:
+        """
+        Creates a semicolon-terminated multi-variable declaration statement (shorthand for
+        ``C.statement(C.multi_declaration(*items))``).
+
+        Args:
+            *items: Variables to declare. Each item may be a :class:`~cfile.core.Variable`,
+                a ``(Variable, init_value)`` 2-tuple, or a :class:`~cfile.core.Declaration`
+                wrapping a :class:`~cfile.core.Variable`.
+
+        Returns:
+            A new :class:`~cfile.core.Statement` wrapping a :class:`~cfile.core.MultiDeclaration`.
+        """
+        return core.Statement(core.MultiDeclaration(*items))
 
     def if_statement(self,
                      condition: Any | None = None,

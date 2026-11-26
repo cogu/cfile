@@ -350,7 +350,9 @@ Loops (``for``, ``while``, ``do ... while``)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Use ``C.for_statement()`` (or ``C.for_loop()``), ``C.while_statement()`` (or ``C.while_loop()``),
-and ``C.do_while_statement()`` (or ``C.do_while()``):
+and ``C.do_while_statement()`` (or ``C.do_while()``). To declare multiple variables of the same
+type or chain multiple expressions with commas in ``for`` headers (or standalone statements), use
+``C.multi_declaration()``, ``C.multi_declaration_statement()``, and ``C.multi_statement()``:
 
 .. code-block:: python
 
@@ -362,15 +364,16 @@ and ``C.do_while_statement()`` (or ``C.do_while()``):
     n = C.variable("n", "int")
     sum_var = C.variable("sum", "int")
     i = C.variable("i", "int")
+    j = C.variable("j", "int")
 
     compute_fn = C.function("compute_sum", "int", params=[n])
     body = C.block([
         C.declaration_statement(sum_var, 0),
         C.for_statement(
-            C.declaration(i, 0),
+            C.multi_declaration((i, 0), (j, 0)),
             f"{i} < {n}",
-            f"{i}++",
-            C.sequence(C.statement(f"{sum_var} += {i}")),
+            C.multi_statement(f"{i}++", f"{j}+=2"),
+            C.sequence(C.statement(f"{sum_var} += {i} + {j}")),
         ),
         C.while_statement(
             f"{sum_var} > 100",
@@ -394,8 +397,8 @@ Output:
 
     int compute_sum(int n) {
         int sum = 0;
-        for (int i = 0; i < n; i++) {
-            sum += i;
+        for (int i = 0, j = 0; i < n; i++, j+=2) {
+            sum += i + j;
         }
         while (sum > 100) {
             sum -= 10;

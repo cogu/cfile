@@ -69,6 +69,10 @@ Variables, Functions & Declarations
    :members:
    :show-inheritance:
 
+.. autoclass:: cfile.core.MultiDeclaration
+   :members:
+   :show-inheritance:
+
 Statements, Expressions & Control Flow
 --------------------------------------
 

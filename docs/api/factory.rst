@@ -63,6 +63,10 @@ Variables, Functions & Declarations
      - Wraps a variable, function, struct, or typedef to emit its full C declaration.
    * - :meth:`~cfile.factory.CFactory.declaration_statement`
      - Shorthand for ``C.statement(C.declaration(element, content))``.
+   * - :meth:`~cfile.factory.CFactory.multi_declaration`
+     - Declares multiple variables of the same base type in a single comma-separated declaration.
+   * - :meth:`~cfile.factory.CFactory.multi_declaration_statement`
+     - Shorthand for ``C.statement(C.multi_declaration(*items))``.
 
 Statements, Expressions & Control Flow
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -75,6 +79,8 @@ Statements, Expressions & Control Flow
      - Description
    * - :meth:`~cfile.factory.CFactory.statement`
      - Wraps an expression or declaration in a semicolon-terminated statement.
+   * - :meth:`~cfile.factory.CFactory.multi_statement`
+     - Creates a semicolon-terminated statement containing multiple comma-separated expressions.
    * - :meth:`~cfile.factory.CFactory.assignment`
      - Creates an assignment expression (``<lhs> = <rhs>``).
    * - :meth:`~cfile.factory.CFactory.fn_call`
