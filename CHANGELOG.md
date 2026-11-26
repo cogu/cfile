@@ -8,6 +8,10 @@ Notable changes.
 
 * `IfStatement` (`C.if_statement`)
 * `SwitchStatement` (`C.switch` / `C.switch_statement`), `SwitchLabel` (`C.switch_label`), and `SwitchDefault` (`C.switch_default`)
+* Loop statements:
+  * `WhileStatement` (`C.while_statement` / `C.while_loop`)
+  * `DoWhileStatement` (`C.do_while_statement` / `C.do_while`)
+  * `ForStatement` (`C.for_statement` / `C.for_loop`)
 * Flow-control statements and labels:
   * `BreakStatement` (`C.break_statement`)
   * `ContinueStatement` (`C.continue_statement`)

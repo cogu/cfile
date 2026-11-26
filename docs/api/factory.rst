@@ -91,6 +91,12 @@ Statements, Expressions & Control Flow
      - Creates a ``case <value>:`` label inside a ``switch`` body.
    * - :meth:`~cfile.factory.CFactory.switch_default`
      - Creates a ``default:`` label inside a ``switch`` body.
+   * - :meth:`~cfile.factory.CFactory.while_statement`
+     - Creates a ``while (<condition>)`` loop statement (alias: :meth:`~cfile.factory.CFactory.while_loop`).
+   * - :meth:`~cfile.factory.CFactory.do_while_statement`
+     - Creates a ``do ... while (<condition>);`` loop statement (alias: :meth:`~cfile.factory.CFactory.do_while`).
+   * - :meth:`~cfile.factory.CFactory.for_statement`
+     - Creates a ``for (<init>; <condition>; <update>)`` loop statement (alias: :meth:`~cfile.factory.CFactory.for_loop`).
    * - :meth:`~cfile.factory.CFactory.break_statement`
      - Creates a ``break;`` statement.
    * - :meth:`~cfile.factory.CFactory.continue_statement`

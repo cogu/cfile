@@ -1164,19 +1164,7 @@ class SwitchStatement(Element):
                  expression: Any,
                  body: Statement | Block | Sequence | None = None) -> None:
         self.expression = self._check_and_convert_expression(expression)
-        self.body: Statement | Block
-        if body is None:
-            self.body = Block()
-        elif isinstance(body, Block):
-            self.body = body
-        elif isinstance(body, Sequence):
-            block = Block()
-            block.extend(body)
-            self.body = block
-        elif isinstance(body, Statement):
-            self.body = body
-        else:
-            raise TypeError(f"Expected Statement, Sequence, or Block for body, got {str(type(body))}")
+        self.body: Statement | Block = _convert_control_body(body)
 
     def _check_and_convert_expression(self, expr: Any) -> str | Element:
         if isinstance(expr, bool):
@@ -1186,3 +1174,103 @@ class SwitchStatement(Element):
         if isinstance(expr, Element):
             return expr
         raise NotImplementedError(str(type(expr)))
+
+
+def _convert_control_body(body: Statement | Block | Sequence | None) -> Statement | Block:
+    if body is None:
+        return Block()
+    if isinstance(body, Block):
+        return body
+    if isinstance(body, Sequence):
+        block = Block()
+        block.extend(body)
+        return block
+    if isinstance(body, Statement):
+        return body
+    raise TypeError(f"Expected Statement, Sequence, or Block for body, got {str(type(body))}")
+
+
+def _check_and_convert_condition(cond: Any) -> Any:
+    if isinstance(cond, bool):
+        return "true" if cond else "false"
+    if isinstance(cond, (int, float, str)):
+        return str(cond)
+    if isinstance(cond, (Element, Sequence)):
+        return cond
+    if isinstance(cond, (list, tuple)):
+        return [_check_and_convert_condition(part) for part in cond]
+    raise NotImplementedError(str(type(cond)))
+
+
+class WhileStatement(Element):
+    """
+    C ``while`` loop statement.
+
+    Args:
+        condition: Loop continuation condition expression (or :class:`Sequence`
+            of condition parts).
+        body: Loop body (:class:`Statement` for an unbraced single-line body,
+            :class:`Sequence` / :class:`Block` for a braced block, or ``None``
+            for an empty block).
+    """
+    def __init__(self,
+                 condition: Any,
+                 body: Statement | Block | Sequence | None = None) -> None:
+        if condition is None:
+            raise ValueError("WhileStatement requires a condition")
+        self.condition = _check_and_convert_condition(condition)
+        self.body: Statement | Block = _convert_control_body(body)
+
+
+class DoWhileStatement(Element):
+    """
+    C ``do ... while`` loop statement.
+
+    Args:
+        body: Loop body (:class:`Statement` for an unbraced single-line body,
+            :class:`Sequence` / :class:`Block` for a braced block, or ``None``
+            for an empty block).
+        condition: Loop continuation condition expression (or :class:`Sequence`
+            of condition parts).
+    """
+    def __init__(self,
+                 body: Statement | Block | Sequence | None,
+                 condition: Any) -> None:
+        if condition is None:
+            raise ValueError("DoWhileStatement requires a condition")
+        self.body: Statement | Block = _convert_control_body(body)
+        self.condition = _check_and_convert_condition(condition)
+
+
+class ForStatement(Element):
+    """
+    C ``for`` loop statement.
+
+    Args:
+        init: Optional initialization clause (:class:`Declaration`, :class:`Assignment`,
+            :class:`Statement`, :class:`Element`, or ``str``).
+        condition: Optional loop continuation condition expression.
+        update: Optional iteration update expression (:class:`Assignment`,
+            :class:`Element`, or ``str``).
+        body: Loop body (:class:`Statement` for an unbraced single-line body,
+            :class:`Sequence` / :class:`Block` for a braced block, or ``None``
+            for an empty block).
+    """
+    def __init__(self,
+                 init: Any | None = None,
+                 condition: Any | None = None,
+                 update: Any | None = None,
+                 body: Statement | Block | Sequence | None = None) -> None:
+        self.init = self._check_and_convert_clause(init)
+        self.condition = _check_and_convert_condition(condition) if condition is not None else None
+        self.update = self._check_and_convert_clause(update)
+        self.body: Statement | Block = _convert_control_body(body)
+
+    def _check_and_convert_clause(self, clause: Any | None) -> Any | None:
+        if clause is None:
+            return None
+        if isinstance(clause, Statement):
+            if len(clause.parts) == 1:
+                return self._check_and_convert_clause(clause.parts[0])
+            return [self._check_and_convert_clause(part) for part in clause.parts]
+        return _check_and_convert_condition(clause)

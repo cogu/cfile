@@ -124,6 +124,18 @@ Statements, Expressions & Control Flow
    :members:
    :show-inheritance:
 
+.. autoclass:: cfile.core.WhileStatement
+   :members:
+   :show-inheritance:
+
+.. autoclass:: cfile.core.DoWhileStatement
+   :members:
+   :show-inheritance:
+
+.. autoclass:: cfile.core.ForStatement
+   :members:
+   :show-inheritance:
+
 .. autoclass:: cfile.core.StringLiteral
    :members:
    :show-inheritance:

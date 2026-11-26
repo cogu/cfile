@@ -1332,5 +1332,105 @@ class TestEnum(unittest.TestCase):
         self.assertEqual(expected_anon, writer.write_str_elem(C.statement(C.declaration(anon_enum))))
 
 
+class TestLoops(unittest.TestCase):
+
+    def test_while_loop_allman_and_attach(self):
+        C = cfile.CFactory()
+        count = C.variable("count", "int")
+        body = C.sequence([
+            C.statement(C.fn_call("process", count)),
+            C.statement(f"{count}--"),
+        ])
+        loop = C.while_statement(f"{count} > 0", body)
+
+        allman_writer = cfile.Writer()
+        expected_allman = "\n".join([
+            "while (count > 0)",
+            "{",
+            "    process(count);",
+            "    count--;",
+            "}",
+        ])
+        self.assertEqual(expected_allman, allman_writer.write_str_elem(loop))
+
+        attach_writer = cfile.Writer(cfile.StyleOptions(break_before_braces=style.BreakBeforeBraces.ATTACH))
+        expected_attach = "\n".join([
+            "while (count > 0) {",
+            "    process(count);",
+            "    count--;",
+            "}",
+        ])
+        self.assertEqual(expected_attach, attach_writer.write_str_elem(loop))
+
+    def test_while_loop_single_statement_and_alias(self):
+        C = cfile.CFactory()
+        writer = cfile.Writer()
+        loop = C.while_loop(True, C.statement(C.fn_call("poll")))
+        self.assertEqual("while (true) poll();", writer.write_str_elem(loop))
+
+    def test_do_while_allman_and_attach(self):
+        C = cfile.CFactory()
+        attempts = C.variable("attempts", "int")
+        body = C.block([
+            C.statement(f"{attempts}++"),
+        ])
+        loop = C.do_while_statement(body, f"{attempts} < 3")
+
+        allman_writer = cfile.Writer()
+        expected_allman = "\n".join([
+            "do",
+            "{",
+            "    attempts++;",
+            "}",
+            "while (attempts < 3);",
+        ])
+        self.assertEqual(expected_allman, allman_writer.write_str_elem(loop))
+
+        attach_writer = cfile.Writer(cfile.StyleOptions(break_before_braces=style.BreakBeforeBraces.ATTACH))
+        expected_attach = "\n".join([
+            "do {",
+            "    attempts++;",
+            "} while (attempts < 3);",
+        ])
+        self.assertEqual(expected_attach, attach_writer.write_str_elem(loop))
+
+        macro_loop = C.do_while(C.sequence(C.statement(C.fn_call("action"))), 0)
+        expected_macro = "\n".join([
+            "do {",
+            "    action();",
+            "} while (0);",
+        ])
+        self.assertEqual(expected_macro, attach_writer.write_str_elem(macro_loop))
+
+    def test_for_statement_c99_declaration_and_variants(self):
+        C = cfile.CFactory()
+        i = C.variable("i", "int")
+        n = C.variable("n", "int")
+        body = C.sequence(C.statement(C.fn_call("work", i)))
+
+        loop = C.for_statement(C.declaration(i, 0), f"{i} < {n}", f"{i}++", body)
+        attach_writer = cfile.Writer(cfile.StyleOptions(break_before_braces=style.BreakBeforeBraces.ATTACH))
+        expected = "\n".join([
+            "for (int i = 0; i < n; i++) {",
+            "    work(i);",
+            "}",
+        ])
+        self.assertEqual(expected, attach_writer.write_str_elem(loop))
+
+        loop_from_stmt = C.for_loop(C.declaration_statement(i, 0), f"{i} < {n}", f"{i}++", body)
+        self.assertEqual(expected, attach_writer.write_str_elem(loop_from_stmt))
+
+        forever = C.for_statement(body=C.sequence(C.break_statement()))
+        expected_forever = "\n".join([
+            "for (;;) {",
+            "    break;",
+            "}",
+        ])
+        self.assertEqual(expected_forever, attach_writer.write_str_elem(forever))
+
+        no_init = C.for_statement(condition=f"{i} < 10", update=f"{i}++", body=C.statement(C.fn_call("step", i)))
+        self.assertEqual("for (; i < 10; i++) step(i);", attach_writer.write_str_elem(no_init))
+
+
 if __name__ == '__main__':
     unittest.main()

@@ -854,3 +854,111 @@ class CFactory:  # pylint: disable=too-many-public-methods
             A new :class:`~cfile.core.SwitchStatement` instance.
         """
         return core.SwitchStatement(expression, body)
+
+    def while_statement(self,
+                        condition: Any,
+                        body: Union[core.Statement, core.Block, core.Sequence, None] = None) -> core.WhileStatement:
+        """
+        Creates a ``while (<condition>)`` loop statement.
+
+        Args:
+            condition: Loop continuation condition expression (or :class:`~cfile.core.Sequence`
+                of condition parts).
+            body: Loop body (:class:`~cfile.core.Statement` for an unbraced single-line body,
+                :class:`~cfile.core.Sequence` / :class:`~cfile.core.Block` for a braced block,
+                or ``None`` for an empty block).
+
+        Returns:
+            A new :class:`~cfile.core.WhileStatement` instance.
+        """
+        return core.WhileStatement(condition, body)
+
+    def while_loop(self,
+                   condition: Any,
+                   body: Union[core.Statement, core.Block, core.Sequence, None] = None) -> core.WhileStatement:
+        """
+        Alias for :meth:`while_statement`.
+
+        Args:
+            condition: Loop continuation condition expression.
+            body: Loop body.
+
+        Returns:
+            A new :class:`~cfile.core.WhileStatement` instance.
+        """
+        return core.WhileStatement(condition, body)
+
+    def do_while_statement(self,
+                           body: Union[core.Statement, core.Block, core.Sequence, None],
+                           condition: Any) -> core.DoWhileStatement:
+        """
+        Creates a ``do ... while (<condition>);`` loop statement.
+
+        Args:
+            body: Loop body (:class:`~cfile.core.Statement` for an unbraced single-line body,
+                :class:`~cfile.core.Sequence` / :class:`~cfile.core.Block` for a braced block,
+                or ``None`` for an empty block).
+            condition: Loop continuation condition expression.
+
+        Returns:
+            A new :class:`~cfile.core.DoWhileStatement` instance.
+        """
+        return core.DoWhileStatement(body, condition)
+
+    def do_while(self,
+                 body: Union[core.Statement, core.Block, core.Sequence, None],
+                 condition: Any) -> core.DoWhileStatement:
+        """
+        Alias for :meth:`do_while_statement`.
+
+        Args:
+            body: Loop body.
+            condition: Loop continuation condition expression.
+
+        Returns:
+            A new :class:`~cfile.core.DoWhileStatement` instance.
+        """
+        return core.DoWhileStatement(body, condition)
+
+    def for_statement(self,
+                      init: Any | None = None,
+                      condition: Any | None = None,
+                      update: Any | None = None,
+                      body: Union[core.Statement, core.Block, core.Sequence, None] = None) -> core.ForStatement:
+        """
+        Creates a ``for (<init>; <condition>; <update>)`` loop statement.
+
+        Args:
+            init: Optional initialization clause (:class:`~cfile.core.Declaration`,
+                :class:`~cfile.core.Assignment`, :class:`~cfile.core.Statement`,
+                :class:`~cfile.core.Element`, or ``str``).
+            condition: Optional loop continuation condition expression.
+            update: Optional iteration update expression (:class:`~cfile.core.Assignment`,
+                :class:`~cfile.core.Element`, or ``str``).
+            body: Loop body (:class:`~cfile.core.Statement` for an unbraced single-line body,
+                :class:`~cfile.core.Sequence` / :class:`~cfile.core.Block` for a braced block,
+                or ``None`` for an empty block).
+
+        Returns:
+            A new :class:`~cfile.core.ForStatement` instance.
+        """
+        return core.ForStatement(init, condition, update, body)
+
+    def for_loop(self,
+                 init: Any | None = None,
+                 condition: Any | None = None,
+                 update: Any | None = None,
+                 body: Union[core.Statement, core.Block, core.Sequence, None] = None) -> core.ForStatement:
+        """
+        Alias for :meth:`for_statement`.
+
+        Args:
+            init: Optional initialization clause.
+            condition: Optional loop continuation condition expression.
+            update: Optional iteration update expression.
+            body: Loop body.
+
+        Returns:
+            A new :class:`~cfile.core.ForStatement` instance.
+        """
+        return core.ForStatement(init, condition, update, body)

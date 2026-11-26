@@ -118,6 +118,9 @@ class Writer(Formatter):
             "SwitchLabel": self._write_switch_label,
             "SwitchDefault": self._write_switch_default,
             "SwitchStatement": self._write_switch_statement,
+            "WhileStatement": self._write_while_statement,
+            "DoWhileStatement": self._write_do_while_statement,
+            "ForStatement": self._write_for_statement,
             "Line": self._write_line_element,
             "Directive": self._write_directive,
             "IncludeDirective": self._write_directive,
@@ -863,6 +866,84 @@ class Writer(Formatter):
             self._eol()
         else:
             raise NotImplementedError(str(type(elem.body)))
+
+    def _write_loop_body(self, body: core.Statement | core.Block) -> None:
+        if isinstance(body, core.Block):
+            if self.style.brace_wrapping.after_control_statement:
+                self._eol()
+                self._start_line()
+                self._write("{")
+                self._eol()
+            else:
+                self._write(" {")
+                self._eol()
+            if len(body.elements):
+                self._indent()
+                self._write_sequence(body)
+                self._dedent()
+            self._start_line()
+            self._write("}")
+            self._eol()
+        elif isinstance(body, core.Statement):
+            self._write(" ")
+            self._write_statement(body)
+            self._eol()
+        else:
+            raise NotImplementedError(str(type(body)))
+
+    def _write_while_statement(self, elem: core.WhileStatement) -> None:
+        self._write("while (")
+        self._write_condition(elem.condition)
+        self._write(")")
+        self._write_loop_body(elem.body)
+
+    def _write_do_while_statement(self, elem: core.DoWhileStatement) -> None:
+        self._write("do")
+        if isinstance(elem.body, core.Block):
+            if self.style.brace_wrapping.after_control_statement:
+                self._eol()
+                self._start_line()
+                self._write("{")
+                self._eol()
+            else:
+                self._write(" {")
+                self._eol()
+            if len(elem.body.elements):
+                self._indent()
+                self._write_sequence(elem.body)
+                self._dedent()
+            self._start_line()
+            self._write("}")
+        elif isinstance(elem.body, core.Statement):
+            self._write(" ")
+            self._write_statement(elem.body)
+        else:
+            raise NotImplementedError(str(type(elem.body)))
+
+        if self.style.brace_wrapping.before_while:
+            self._eol()
+            self._start_line()
+            self._write("while (")
+        else:
+            self._write(" while (")
+        self._write_condition(elem.condition)
+        self._write(");")
+        self._eol()
+
+    def _write_for_statement(self, elem: core.ForStatement) -> None:
+        self._write("for (")
+        if elem.init is not None:
+            self._write_condition(elem.init)
+        self._write(";")
+        if elem.condition is not None:
+            self._write(" ")
+            self._write_condition(elem.condition)
+        self._write(";")
+        if elem.update is not None:
+            self._write(" ")
+            self._write_condition(elem.update)
+        self._write(")")
+        self._write_loop_body(elem.body)
 
     def _write_func_call(self, elem: core.FunctionCall) -> None:
         self._write(f"{elem.name}(")
