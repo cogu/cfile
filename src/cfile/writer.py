@@ -31,6 +31,7 @@ class Formatter:
     def _str_open(self) -> None:
         self.fh = StringIO()
         self.line_number = 1
+        self.column = 0
         self.indentation_level = 0
         self.indentation_str = ""
 
@@ -38,6 +39,7 @@ class Formatter:
         self.fh = open(file_path, "w", encoding="utf-8")
         self.file_path = file_path
         self.line_number = 1
+        self.column = 0
         self.indentation_level = 0
         self.indentation_str = ""
 
@@ -345,11 +347,8 @@ class Writer(Formatter):
 
     def _write_line_element(self, elem: core.Line) -> None:
         for i, part in enumerate(elem.parts):
-            if i > 0:
-                if isinstance(part, core.Comment):
-                    self._write(" " * part.adjust)
-                else:
-                    self._write(" ")
+            if i > 0 and not isinstance(part, core.Comment):
+                self._write(" ")
             self._write_line_part(part)
         self._eol()
 
@@ -382,6 +381,8 @@ class Writer(Formatter):
         """
         Writes line comment
         """
+        if self.column > 0:
+            self._write(" " * elem.adjust)
         if isinstance(elem.text, str):
             self._write("//" + elem.text)
         else:
@@ -391,6 +392,8 @@ class Writer(Formatter):
         """
         Writes block comment
         """
+        if self.column > 0:
+            self._write(" " * elem.adjust)
         if isinstance(elem.text, str):
             lines = elem.text.splitlines()
         elif isinstance(elem.text, list):
