@@ -12,7 +12,7 @@ i = C.variable("i", "int")
 j = C.variable("j", "int")
 
 compute_fn = C.function("compute_sum", "int", params=[n])
-body = C.block([
+body = C.sequence([
     C.declaration_statement(sum_var, 0),
     C.for_statement(
         C.multi_declaration((i, 0), (j, 0)),

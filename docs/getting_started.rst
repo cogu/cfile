@@ -30,7 +30,7 @@ The following example creates a ``main`` function that prints ``Hello World\n`` 
             C.variable("argv", char_ptr_type, pointer=True),
         ],
     )
-    main_body = C.block([
+    main_body = C.sequence([
         C.statement(C.fn_call("printf", C.str_literal(r"Hello World\n"))),
         C.return_statement(0),
     ])
@@ -259,7 +259,7 @@ If / Else-If / Else Statements
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Use ``C.if_statement()`` with ``.else_if()`` and ``.else_branch()`` (or ``.append(condition, branch)``
-when building branches in a loop). Passing a ``Sequence`` or ``Block`` wraps the branch in braces;
+when building branches in a loop). Passing a ``Sequence`` wraps the branch in braces;
 passing a single ``Statement`` emits a single-line unbraced branch:
 
 .. code-block:: python
@@ -271,7 +271,7 @@ passing a single ``Statement`` emits a single-line unbraced branch:
     arg = C.variable("x", "int")
     code.append(C.declaration(C.function("classify", "int", params=[arg])))
 
-    body = C.block([
+    body = C.sequence([
         C.if_statement(f"{arg} > 0", C.sequence(C.return_statement(1)))
         .else_if(f"{arg} < 0", C.sequence(C.return_statement(-1)))
         .else_branch(C.sequence(C.return_statement(0)))
@@ -310,7 +310,7 @@ Use ``C.switch()``, ``C.switch_label()``, ``C.switch_default()``, ``C.break_stat
     cleanup = C.named_label("CLEANUP")
     switch_var = C.variable("value", "int")
 
-    switch_body = C.block([
+    switch_body = C.sequence([
         C.switch_label(1),
         C.break_statement(),
         C.switch_label(2),
@@ -319,32 +319,30 @@ Use ``C.switch()``, ``C.switch_label()``, ``C.switch_default()``, ``C.break_stat
         C.goto_statement(cleanup),
     ])
 
-    block = C.block([
+    code = C.sequence([
         C.switch(switch_var, switch_body),
         C.continue_statement(),
         cleanup,
     ])
 
     writer = cfile.Writer()
-    print(writer.write_str(C.sequence(block)))
+    print(writer.write_str(code))
 
 Output:
 
 .. code-block:: c
 
+    switch (value)
     {
-        switch (value)
-        {
-        case 1:
-            break;
-        case 2:
-            break;
-        default:
-            goto CLEANUP;
-        }
-        continue;
-    CLEANUP:
+    case 1:
+        break;
+    case 2:
+        break;
+    default:
+        goto CLEANUP;
     }
+    continue;
+    CLEANUP:
 
 Loops (``for``, ``while``, ``do ... while``)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -367,7 +365,7 @@ type or chain multiple expressions with commas in ``for`` headers (or standalone
     j = C.variable("j", "int")
 
     compute_fn = C.function("compute_sum", "int", params=[n])
-    body = C.block([
+    body = C.sequence([
         C.declaration_statement(sum_var, 0),
         C.for_statement(
             C.multi_declaration((i, 0), (j, 0)),

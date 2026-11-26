@@ -6,8 +6,8 @@ CFactory (``cfile.factory``)
 Method Overview by Category
 ---------------------------
 
-Sequences & Blocks
-~~~~~~~~~~~~~~~~~~
+Sequences
+~~~~~~~~~
 
 .. list-table::
    :header-rows: 1
@@ -16,9 +16,7 @@ Sequences & Blocks
    * - Method
      - Description
    * - :meth:`~cfile.factory.CFactory.sequence`
-     - Creates an unbraced sequence of code elements.
-   * - :meth:`~cfile.factory.CFactory.block`
-     - Creates a brace-enclosed block sequence (``{ ... }``).
+     - Creates a sequence of code elements (automatically wrapped in ``{ ... }`` when used as a function, branch, loop, or nested block body).
 
 Data Types, Structs & Typedefs
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

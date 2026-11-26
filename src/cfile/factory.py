@@ -339,18 +339,6 @@ class CFactory:  # pylint: disable=too-many-public-methods
         """
         return core.Extern(language)
 
-    def block(self, elements: Any | list[Any] | None = None) -> core.Block:
-        """
-        Creates a brace-enclosed block sequence (``{ ... }``).
-
-        Args:
-            elements: Optional initial element or list of elements inside the block.
-
-        Returns:
-            A new :class:`~cfile.core.Block` instance.
-        """
-        return core.Block(elements)
-
     def function(self,
                  name: str,
                  return_type: str | core.DataType | None = None,
@@ -733,8 +721,8 @@ class CFactory:  # pylint: disable=too-many-public-methods
             element: The :class:`~cfile.core.Variable`, :class:`~cfile.core.Function`, or
                 :class:`~cfile.core.DataType` to declare.
             content: Optional initial value (when ``element`` is a :class:`~cfile.core.Variable`)
-                or function body :class:`~cfile.core.Block` / :class:`~cfile.core.Sequence`
-                (when ``element`` is a :class:`~cfile.core.Function`).
+                or function body :class:`~cfile.core.Sequence` (when ``element`` is a
+                :class:`~cfile.core.Function`).
 
         Returns:
             A new :class:`~cfile.core.Declaration` instance.
@@ -798,7 +786,7 @@ class CFactory:  # pylint: disable=too-many-public-methods
 
     def if_statement(self,
                      condition: Any | None = None,
-                     branch: Union[core.Statement, core.Block, core.Sequence, None] = None) -> core.IfStatement:
+                     branch: Union[core.Statement, core.Sequence, None] = None) -> core.IfStatement:
         """
         Creates an ``if / else if / else`` statement.
 
@@ -809,8 +797,7 @@ class CFactory:  # pylint: disable=too-many-public-methods
             condition: Optional initial ``if`` condition expression (or :class:`~cfile.core.Sequence`
                 of condition parts).
             branch: Optional initial ``if`` branch (:class:`~cfile.core.Statement` for an unbraced
-                single-line branch, or :class:`~cfile.core.Sequence` / :class:`~cfile.core.Block`
-                for a brace-enclosed block).
+                single-line branch, or :class:`~cfile.core.Sequence` for a brace-enclosed block).
 
         Returns:
             A new :class:`~cfile.core.IfStatement` instance.
@@ -882,15 +869,14 @@ class CFactory:  # pylint: disable=too-many-public-methods
 
     def switch(self,
                expression: Any,
-               body: Union[core.Statement, core.Block, core.Sequence, None] = None) -> core.SwitchStatement:
+               body: Union[core.Statement, core.Sequence, None] = None) -> core.SwitchStatement:
         """
         Creates a ``switch (<expression>)`` statement.
 
         Args:
             expression: Controlling expression evaluated by the ``switch``.
-            body: Body of the ``switch`` (typically a :class:`~cfile.core.Block` or
-                :class:`~cfile.core.Sequence` containing :class:`~cfile.core.SwitchLabel`,
-                :class:`~cfile.core.SwitchDefault`, and statements).
+            body: Body of the ``switch`` (typically a :class:`~cfile.core.Sequence` containing
+                :class:`~cfile.core.SwitchLabel`, :class:`~cfile.core.SwitchDefault`, and statements).
 
         Returns:
             A new :class:`~cfile.core.SwitchStatement` instance.
@@ -899,7 +885,7 @@ class CFactory:  # pylint: disable=too-many-public-methods
 
     def switch_statement(self,
                          expression: Any,
-                         body: Union[core.Statement, core.Block, core.Sequence, None] = None) -> core.SwitchStatement:
+                         body: Union[core.Statement, core.Sequence, None] = None) -> core.SwitchStatement:
         """
         Alias for :meth:`switch`.
 
@@ -914,7 +900,7 @@ class CFactory:  # pylint: disable=too-many-public-methods
 
     def while_statement(self,
                         condition: Any,
-                        body: Union[core.Statement, core.Block, core.Sequence, None] = None) -> core.WhileStatement:
+                        body: Union[core.Statement, core.Sequence, None] = None) -> core.WhileStatement:
         """
         Creates a ``while (<condition>)`` loop statement.
 
@@ -922,8 +908,7 @@ class CFactory:  # pylint: disable=too-many-public-methods
             condition: Loop continuation condition expression (or :class:`~cfile.core.Sequence`
                 of condition parts).
             body: Loop body (:class:`~cfile.core.Statement` for an unbraced single-line body,
-                :class:`~cfile.core.Sequence` / :class:`~cfile.core.Block` for a braced block,
-                or ``None`` for an empty block).
+                :class:`~cfile.core.Sequence` for a braced block, or ``None`` for an empty block).
 
         Returns:
             A new :class:`~cfile.core.WhileStatement` instance.
@@ -932,7 +917,7 @@ class CFactory:  # pylint: disable=too-many-public-methods
 
     def while_loop(self,
                    condition: Any,
-                   body: Union[core.Statement, core.Block, core.Sequence, None] = None) -> core.WhileStatement:
+                   body: Union[core.Statement, core.Sequence, None] = None) -> core.WhileStatement:
         """
         Alias for :meth:`while_statement`.
 
@@ -946,15 +931,14 @@ class CFactory:  # pylint: disable=too-many-public-methods
         return core.WhileStatement(condition, body)
 
     def do_while_statement(self,
-                           body: Union[core.Statement, core.Block, core.Sequence, None],
+                           body: Union[core.Statement, core.Sequence, None],
                            condition: Any) -> core.DoWhileStatement:
         """
         Creates a ``do ... while (<condition>);`` loop statement.
 
         Args:
             body: Loop body (:class:`~cfile.core.Statement` for an unbraced single-line body,
-                :class:`~cfile.core.Sequence` / :class:`~cfile.core.Block` for a braced block,
-                or ``None`` for an empty block).
+                :class:`~cfile.core.Sequence` for a braced block, or ``None`` for an empty block).
             condition: Loop continuation condition expression.
 
         Returns:
@@ -963,7 +947,7 @@ class CFactory:  # pylint: disable=too-many-public-methods
         return core.DoWhileStatement(body, condition)
 
     def do_while(self,
-                 body: Union[core.Statement, core.Block, core.Sequence, None],
+                 body: Union[core.Statement, core.Sequence, None],
                  condition: Any) -> core.DoWhileStatement:
         """
         Alias for :meth:`do_while_statement`.
@@ -981,20 +965,19 @@ class CFactory:  # pylint: disable=too-many-public-methods
                       init: Any | None = None,
                       condition: Any | None = None,
                       update: Any | None = None,
-                      body: Union[core.Statement, core.Block, core.Sequence, None] = None) -> core.ForStatement:
+                      body: Union[core.Statement, core.Sequence, None] = None) -> core.ForStatement:
         """
         Creates a ``for (<init>; <condition>; <update>)`` loop statement.
 
         Args:
             init: Optional initialization clause (:class:`~cfile.core.Declaration`,
-                :class:`~cfile.core.Assignment`, :class:`~cfile.core.Statement`,
-                :class:`~cfile.core.Element`, or ``str``).
+                :class:`~cfile.core.MultiDeclaration`, :class:`~cfile.core.Assignment`,
+                :class:`~cfile.core.Statement`, :class:`~cfile.core.Element`, or ``str``).
             condition: Optional loop continuation condition expression.
             update: Optional iteration update expression (:class:`~cfile.core.Assignment`,
-                :class:`~cfile.core.Element`, or ``str``).
+                :class:`~cfile.core.Statement`, :class:`~cfile.core.Element`, or ``str``).
             body: Loop body (:class:`~cfile.core.Statement` for an unbraced single-line body,
-                :class:`~cfile.core.Sequence` / :class:`~cfile.core.Block` for a braced block,
-                or ``None`` for an empty block).
+                :class:`~cfile.core.Sequence` for a braced block, or ``None`` for an empty block).
 
         Returns:
             A new :class:`~cfile.core.ForStatement` instance.
@@ -1005,7 +988,7 @@ class CFactory:  # pylint: disable=too-many-public-methods
                  init: Any | None = None,
                  condition: Any | None = None,
                  update: Any | None = None,
-                 body: Union[core.Statement, core.Block, core.Sequence, None] = None) -> core.ForStatement:
+                 body: Union[core.Statement, core.Sequence, None] = None) -> core.ForStatement:
         """
         Alias for :meth:`for_statement`.
 

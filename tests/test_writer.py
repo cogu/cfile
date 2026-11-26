@@ -595,7 +595,7 @@ class TestBlock(unittest.TestCase):
     def test_wrap_brace_after_function(self):
         seq = core.Sequence()
         seq.append(core.Declaration(core.Function("f")))
-        seq.append(core.Block())
+        seq.append(core.Sequence())
         writer = cfile.Writer(cfile.StyleOptions(break_before_braces=style.BreakBeforeBraces.ALLMAN))
         output = writer.write_str(seq)
         expected = "\n".join(["void f(void)", "{", "}"])
@@ -604,14 +604,14 @@ class TestBlock(unittest.TestCase):
     def test_attach_brace_to_function(self):
         seq = core.Sequence()
         seq.append(core.Declaration(core.Function("f")))
-        seq.append(core.Block())
+        seq.append(core.Sequence())
         writer = cfile.Writer(cfile.StyleOptions(break_before_braces=style.BreakBeforeBraces.ATTACH))
         output = writer.write_str(seq)
         expected = "\n".join(["void f(void) {", "}"])
         self.assertEqual(expected, output)
 
     def test_variable_declarations(self):
-        block = core.Block()
+        block = core.Sequence()
         block.append(core.Statement(core.Declaration(core.Variable("a", "int"))))
         block.append(core.Statement(core.Declaration(core.Variable("b", "int"))))
         block.append(core.Statement(core.Declaration(core.Variable("c", "int"))))
@@ -623,7 +623,7 @@ class TestBlock(unittest.TestCase):
     def test_function_definition(self):
         seq = core.Sequence()
         seq.append(core.Declaration(core.Function("add", "int").make_param("a", "int").make_param("b", "int")))
-        body = core.Block()
+        body = core.Sequence()
         body.append(core.Statement("return a + b"))
         seq.append(body)
         allman_writer = cfile.Writer(cfile.StyleOptions(break_before_braces=style.BreakBeforeBraces.ALLMAN))
@@ -637,7 +637,7 @@ class TestBlock(unittest.TestCase):
 
     def test_struct_declaration_inside_block(self):
         outer = core.Sequence()
-        inner = core.Block()
+        inner = core.Sequence()
         outer.append(inner)
         struct = core.Struct("IntPair", members=[core.StructMember("first", "int"),
                                                  core.StructMember("second", "int")])
@@ -1000,7 +1000,7 @@ class TestIfStatement(unittest.TestCase):
         C = cfile.CFactory()
         code = C.sequence()
         code.append(C.declaration(C.function("check", "int", params=[C.variable("x", "int")])))
-        body = C.block()
+        body = C.sequence()
         body.append(
             C.if_statement("x > 0", C.sequence(C.statement(C.fn_return(1))))
             .else_branch(C.sequence(C.statement(C.fn_return(0))))
@@ -1070,7 +1070,7 @@ class TestFlowControlAndSwitch(unittest.TestCase):
         C = cfile.CFactory()
         code = C.sequence()
         switch_var = C.variable("value", "int")
-        switch_body = C.block([
+        switch_body = C.sequence([
             C.switch_label(1),
             C.break_statement(),
             C.switch_label(2),
@@ -1129,11 +1129,11 @@ class TestFlowControlAndSwitch(unittest.TestCase):
     def test_switch_case_blocks_styles(self):
         C = cfile.CFactory()
         switch_var = C.variable("x", "int")
-        case_block = C.block([
+        case_block = C.sequence([
             C.statement(C.declaration(C.variable("tmp", "int"), 1)),
             C.break_statement(),
         ])
-        stmt = C.switch(switch_var, C.block([C.switch_label(1), case_block]))
+        stmt = C.switch(switch_var, C.sequence([C.switch_label(1), case_block]))
 
         attach_writer = cfile.Writer(cfile.StyleOptions(break_before_braces=style.BreakBeforeBraces.ATTACH))
         expected_attach = "\n".join([
@@ -1167,8 +1167,8 @@ class TestFlowControlAndSwitch(unittest.TestCase):
     def test_goto_label_indentation_inside_function(self):
         C = cfile.CFactory()
         cleanup = C.named_label("CLEANUP")
-        body = C.block([
-            C.if_statement("err", C.block([C.goto_statement(cleanup), C.named_label("INNER")])),
+        body = C.sequence([
+            C.if_statement("err", C.sequence([C.goto_statement(cleanup), C.named_label("INNER")])),
             cleanup,
             C.statement(C.fn_return(0)),
         ])
@@ -1371,7 +1371,7 @@ class TestLoops(unittest.TestCase):
     def test_do_while_allman_and_attach(self):
         C = cfile.CFactory()
         attempts = C.variable("attempts", "int")
-        body = C.block([
+        body = C.sequence([
             C.statement(f"{attempts}++"),
         ])
         loop = C.do_while_statement(body, f"{attempts} < 3")

@@ -817,8 +817,7 @@ class Declaration(Element):
             (including :class:`Struct`, :class:`Union`, :class:`Enum`, or
             :class:`TypeDef`) to declare.
         content: Optional initializer value (when ``element`` is a :class:`Variable`)
-            or function body :class:`Block` / :class:`Sequence` (when ``element`` is
-            a :class:`Function`).
+            or function body :class:`Sequence` (when ``element`` is a :class:`Function`).
     """
     def __init__(self,
                  element: Variable | Function | DataType,
@@ -826,22 +825,18 @@ class Declaration(Element):
         if isinstance(element, (Variable, Function, DataType)):
             self.element = element
             self.init_value: Any | None = None
-            self.body: Block | None = None
+            self.body: Sequence | None = None
         else:
             raise TypeError(f"element: Invalid type '{str(type(element))}'")
         if content is not None:
             if isinstance(element, Variable):
                 self.init_value = content
             elif isinstance(element, Function):
-                if isinstance(content, Block):
+                if isinstance(content, Sequence):
                     self.body = content
-                elif isinstance(content, Sequence):
-                    block = Block()
-                    block.extend(content)
-                    self.body = block
                 else:
                     raise TypeError(
-                        f"Expected Sequence or Block for Function declaration content, got {str(type(content))}"
+                        f"Expected Sequence for Function declaration content, got {str(type(content))}"
                     )
             else:
                 raise ValueError("content only allowed for Variable or Function declarations")
@@ -1055,12 +1050,6 @@ class Sequence:
         return self
 
 
-class Block(Sequence):
-    """
-    A sequence wrapped in braces
-    """
-
-
 class IfStatement(Element):
     """
     If / else-if / else statement.
@@ -1069,13 +1058,13 @@ class IfStatement(Element):
         condition: Optional initial ``if`` condition expression (or :class:`Sequence`
             of condition parts).
         branch: Optional initial ``if`` branch (:class:`Statement` for an unbraced
-            single-line branch, or :class:`Sequence` / :class:`Block` for a braced block).
+            single-line branch, or :class:`Sequence` for a braced block).
     """
     def __init__(self,
                  condition: Any | None = None,
-                 branch: Statement | Block | Sequence | None = None) -> None:
+                 branch: Statement | Sequence | None = None) -> None:
         self.conditions: list[Any] = []
-        self.branches: list[Statement | Block] = []
+        self.branches: list[Statement | Sequence] = []
         if condition is not None or branch is not None:
             if condition is None or branch is None:
                 raise ValueError("Both condition and branch must be provided when initializing IfStatement")
@@ -1083,15 +1072,14 @@ class IfStatement(Element):
 
     def append(self,
                condition: Any | None,
-               branch: Statement | Block | Sequence) -> "IfStatement":
+               branch: Statement | Sequence) -> "IfStatement":
         """
         Appends a conditional branch, or a final ``else`` branch when ``condition`` is ``None``.
 
         Args:
             condition: Condition expression for an ``if`` or ``else if`` branch, or ``None``
                 for the unconditional final ``else`` branch.
-            branch: Branch body (:class:`Statement`, :class:`Sequence`, or :class:`Block`).
-                A :class:`Sequence` is automatically converted into a braced :class:`Block`.
+            branch: Branch body (:class:`Statement` or :class:`Sequence`).
 
         Returns:
             This :class:`IfStatement` instance for method chaining.
@@ -1104,27 +1092,21 @@ class IfStatement(Element):
         else:
             self.conditions.append(self._check_and_convert_condition(condition))
 
-        if isinstance(branch, Block):
-            self.branches.append(branch)
-        elif isinstance(branch, Sequence):
-            block = Block()
-            block.extend(branch)
-            self.branches.append(block)
-        elif isinstance(branch, Statement):
+        if isinstance(branch, (Sequence, Statement)):
             self.branches.append(branch)
         else:
-            raise TypeError(f"Expected Statement, Sequence, or Block for branch, got {str(type(branch))}")
+            raise TypeError(f"Expected Statement or Sequence for branch, got {str(type(branch))}")
         return self
 
     def else_if(self,
                 condition: Any,
-                branch: Statement | Block | Sequence) -> "IfStatement":
+                branch: Statement | Sequence) -> "IfStatement":
         """
         Appends an ``else if`` branch.
 
         Args:
             condition: Condition expression for the ``else if`` branch.
-            branch: Branch body (:class:`Statement`, :class:`Sequence`, or :class:`Block`).
+            branch: Branch body (:class:`Statement` or :class:`Sequence`).
 
         Returns:
             This :class:`IfStatement` instance for method chaining.
@@ -1136,12 +1118,12 @@ class IfStatement(Element):
         return self.append(condition, branch)
 
     def else_branch(self,
-                    branch: Statement | Block | Sequence) -> "IfStatement":
+                    branch: Statement | Sequence) -> "IfStatement":
         """
         Appends the final unconditional ``else`` branch.
 
         Args:
-            branch: Branch body (:class:`Statement`, :class:`Sequence`, or :class:`Block`).
+            branch: Branch body (:class:`Statement` or :class:`Sequence`).
 
         Returns:
             This :class:`IfStatement` instance for method chaining.
@@ -1229,9 +1211,9 @@ class SwitchStatement(Element):
     """
     def __init__(self,
                  expression: Any,
-                 body: Statement | Block | Sequence | None = None) -> None:
+                 body: Statement | Sequence | None = None) -> None:
         self.expression = self._check_and_convert_expression(expression)
-        self.body: Statement | Block = _convert_control_body(body)
+        self.body: Statement | Sequence = _convert_control_body(body)
 
     def _check_and_convert_expression(self, expr: Any) -> str | Element:
         if isinstance(expr, bool):
@@ -1243,18 +1225,12 @@ class SwitchStatement(Element):
         raise NotImplementedError(str(type(expr)))
 
 
-def _convert_control_body(body: Statement | Block | Sequence | None) -> Statement | Block:
+def _convert_control_body(body: Statement | Sequence | None) -> Statement | Sequence:
     if body is None:
-        return Block()
-    if isinstance(body, Block):
+        return Sequence()
+    if isinstance(body, (Sequence, Statement)):
         return body
-    if isinstance(body, Sequence):
-        block = Block()
-        block.extend(body)
-        return block
-    if isinstance(body, Statement):
-        return body
-    raise TypeError(f"Expected Statement, Sequence, or Block for body, got {str(type(body))}")
+    raise TypeError(f"Expected Statement or Sequence for body, got {str(type(body))}")
 
 
 def _check_and_convert_condition(cond: Any) -> Any:
@@ -1277,16 +1253,15 @@ class WhileStatement(Element):
         condition: Loop continuation condition expression (or :class:`Sequence`
             of condition parts).
         body: Loop body (:class:`Statement` for an unbraced single-line body,
-            :class:`Sequence` / :class:`Block` for a braced block, or ``None``
-            for an empty block).
+            :class:`Sequence` for a braced block, or ``None`` for an empty block).
     """
     def __init__(self,
                  condition: Any,
-                 body: Statement | Block | Sequence | None = None) -> None:
+                 body: Statement | Sequence | None = None) -> None:
         if condition is None:
             raise ValueError("WhileStatement requires a condition")
         self.condition = _check_and_convert_condition(condition)
-        self.body: Statement | Block = _convert_control_body(body)
+        self.body: Statement | Sequence = _convert_control_body(body)
 
 
 class DoWhileStatement(Element):
@@ -1295,17 +1270,16 @@ class DoWhileStatement(Element):
 
     Args:
         body: Loop body (:class:`Statement` for an unbraced single-line body,
-            :class:`Sequence` / :class:`Block` for a braced block, or ``None``
-            for an empty block).
+            :class:`Sequence` for a braced block, or ``None`` for an empty block).
         condition: Loop continuation condition expression (or :class:`Sequence`
             of condition parts).
     """
     def __init__(self,
-                 body: Statement | Block | Sequence | None,
+                 body: Statement | Sequence | None,
                  condition: Any) -> None:
         if condition is None:
             raise ValueError("DoWhileStatement requires a condition")
-        self.body: Statement | Block = _convert_control_body(body)
+        self.body: Statement | Sequence = _convert_control_body(body)
         self.condition = _check_and_convert_condition(condition)
 
 
@@ -1314,24 +1288,23 @@ class ForStatement(Element):
     C ``for`` loop statement.
 
     Args:
-        init: Optional initialization clause (:class:`Declaration`, :class:`Assignment`,
-            :class:`Statement`, :class:`Element`, or ``str``).
+        init: Optional initialization clause (:class:`Declaration`, :class:`MultiDeclaration`,
+            :class:`Assignment`, :class:`Statement`, :class:`Element`, or ``str``).
         condition: Optional loop continuation condition expression.
         update: Optional iteration update expression (:class:`Assignment`,
-            :class:`Element`, or ``str``).
+            :class:`Statement`, :class:`Element`, or ``str``).
         body: Loop body (:class:`Statement` for an unbraced single-line body,
-            :class:`Sequence` / :class:`Block` for a braced block, or ``None``
-            for an empty block).
+            :class:`Sequence` for a braced block, or ``None`` for an empty block).
     """
     def __init__(self,
                  init: Any | None = None,
                  condition: Any | None = None,
                  update: Any | None = None,
-                 body: Statement | Block | Sequence | None = None) -> None:
+                 body: Statement | Sequence | None = None) -> None:
         self.init = self._check_and_convert_clause(init)
         self.condition = _check_and_convert_condition(condition) if condition is not None else None
         self.update = self._check_and_convert_clause(update)
-        self.body: Statement | Block = _convert_control_body(body)
+        self.body: Statement | Sequence = _convert_control_body(body)
 
     def _check_and_convert_clause(self, clause: Any | None) -> Any | None:
         if clause is None:

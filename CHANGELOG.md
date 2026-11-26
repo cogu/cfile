@@ -28,7 +28,7 @@ Notable changes.
   * `LineDirective` (`C.line_directive`), `ErrorDirective` (`C.error_directive`), `WarningDirective` (`C.warning_directive`), and `PragmaDirective` (`C.pragma_directive`)
 * Automatic preprocessor directive indentation options in `StyleOptions` (`indent_pp_directives: PPDirectiveIndent` and `pp_indent_width`) with top-level include-guard detection
 * Support passing a `Function` object directly to `FunctionCall` / `C.fn_call` with argument count validation
-* Support passing a function body (`Block` or `Sequence`) directly as the second argument (`content`) of `Declaration` / `C.declaration`
+* Support passing a function body (`Sequence`) directly as the second argument (`content`) of `Declaration` / `C.declaration`
 * Convenience factory method `C.declaration_statement(element, content=None)` as shorthand for `C.statement(C.declaration(element, content))`
 * Multi-variable declarations and comma-chained statements:
   * `MultiDeclaration` (`C.multi_declaration(*items)` and `C.multi_declaration_statement(*items)`)
@@ -43,6 +43,7 @@ Notable changes.
 
 ### Changed
 
+* Retire `core.Block` and `C.block()` in favor of `core.Sequence` and `C.sequence()` (brace wrapping is determined automatically from context)
 * Rename `func_call` to `fn_call` and `func_return` to `fn_return` (keeping old names as aliases)
 * Refactor preprocessor directive factory methods and indentation:
   * Rename existing directive factory methods to `*_directive` (`include_directive`, `define_directive`, `ifdef_directive`, `ifndef_directive`, `endif_directive`)
@@ -50,7 +51,7 @@ Notable changes.
   * Remove manual `adjust` parameter in favor of `StyleOptions.indent_pp_directives`
 * Make `StyleOptions` optional when initializing `Writer` (defaults to `StyleOptions()`)
 * Make `expression` optional in `FunctionReturn` / `C.fn_return` to support void `return`
-* Allow `Sequence` and `Block` (`C.sequence` and `C.block`) to accept optional initial element(s)
+* Allow `Sequence` (`C.sequence`) to accept optional initial element(s)
 * Trim trailing newline by default in `Writer.write_str`
 * Emit `str` values in `Declaration` initializers as unquoted C expressions (use `C.str_literal` for quoted strings)
 

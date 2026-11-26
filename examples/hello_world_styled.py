@@ -17,7 +17,7 @@ main_function = C.function("main",
                            "int",
                            params=[C.variable("argc", "int"),
                                    C.variable("argv", char_ptr_type, pointer=True)])
-main_body = C.block([
+main_body = C.sequence([
     C.statement(C.fn_call("printf", C.str_literal(r"Hello World\n"))),
     C.statement(C.fn_return(0)),
 ])

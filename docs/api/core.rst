@@ -4,14 +4,10 @@ Core Elements (``cfile.core``)
 The ``cfile.core`` module defines the parse-tree elements constructed by :class:`~cfile.factory.CFactory`
 and rendered by :class:`~cfile.writer.Writer`.
 
-Sequences & Blocks
-------------------
+Sequences
+---------
 
 .. autoclass:: cfile.core.Sequence
-   :members:
-   :show-inheritance:
-
-.. autoclass:: cfile.core.Block
    :members:
    :show-inheritance:
 

@@ -108,7 +108,7 @@ class Writer(Formatter):
             "Whitespace": self._write_whitespace,
             "LineComment": self._write_line_comment,
             "BlockComment": self._write_block_comment,
-            "Block": self._write_block,
+            "Sequence": self._write_block,
             "Statement": self._write_statement,
             "BreakStatement": self._write_statement,
             "ContinueStatement": self._write_statement,
@@ -235,11 +235,11 @@ class Writer(Formatter):
                 self._write_line_comment(elem)
                 self._eol()
             elif isinstance(elem, (core.SwitchLabel, core.SwitchDefault)):
-                next_is_block = (i + 1 < num_elements) and isinstance(sequence.elements[i + 1], core.Block)
+                next_is_block = (i + 1 < num_elements) and isinstance(sequence.elements[i + 1], core.Sequence)
                 self._write_case_element_in_sequence(elem, next_is_block)
             elif isinstance(elem, core.NamedLabel):
                 self._write_named_label_in_sequence(elem)
-            elif isinstance(elem, core.Block):
+            elif isinstance(elem, core.Sequence):
                 prev_elem = sequence.elements[i - 1] if i > 0 else None
                 self._write_block_in_sequence(elem, prev_elem)
             elif isinstance(elem, core.Line):
@@ -303,7 +303,7 @@ class Writer(Formatter):
         self._write_named_label(elem)
         self._eol()
 
-    def _write_block_in_sequence(self, elem: core.Block, prev_elem: Any) -> None:
+    def _write_block_in_sequence(self, elem: core.Sequence, prev_elem: Any) -> None:
         prev_is_func_decl = (
             isinstance(prev_elem, core.Declaration)
             and isinstance(prev_elem.element, core.Function)
@@ -738,9 +738,9 @@ class Writer(Formatter):
             self._write("void")
         self._write(")")
 
-    def _write_block(self, elem: core.Block) -> None:
+    def _write_block(self, elem: core.Sequence) -> None:
         """
-        Writes a block sequence
+        Writes a brace-enclosed block sequence
         """
         self._write_starting_brace()
         if len(elem.elements):
@@ -803,7 +803,7 @@ class Writer(Formatter):
             else:
                 self._write("else")
 
-            if isinstance(branch, core.Block):
+            if isinstance(branch, core.Sequence):
                 if self.style.brace_wrapping.after_control_statement:
                     self._eol()
                     self._start_line()
@@ -877,7 +877,7 @@ class Writer(Formatter):
         self._write("switch (")
         self._write_expression(elem.expression)
         self._write(")")
-        if isinstance(elem.body, core.Block):
+        if isinstance(elem.body, core.Sequence):
             if self.style.brace_wrapping.after_control_statement:
                 self._eol()
                 self._start_line()
@@ -904,8 +904,8 @@ class Writer(Formatter):
         else:
             raise NotImplementedError(str(type(elem.body)))
 
-    def _write_loop_body(self, body: core.Statement | core.Block) -> None:
-        if isinstance(body, core.Block):
+    def _write_loop_body(self, body: core.Statement | core.Sequence) -> None:
+        if isinstance(body, core.Sequence):
             if self.style.brace_wrapping.after_control_statement:
                 self._eol()
                 self._start_line()
@@ -936,7 +936,7 @@ class Writer(Formatter):
 
     def _write_do_while_statement(self, elem: core.DoWhileStatement) -> None:
         self._write("do")
-        if isinstance(elem.body, core.Block):
+        if isinstance(elem.body, core.Sequence):
             if self.style.brace_wrapping.after_control_statement:
                 self._eol()
                 self._start_line()

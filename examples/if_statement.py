@@ -7,7 +7,7 @@ C = cfile.CFactory()
 code = C.sequence()
 arg = C.variable("x", "int")
 classify_fn = C.function("classify", "int", params=[arg])
-body = C.block([
+body = C.sequence([
     C.if_statement(f"{arg} > 0", C.sequence(C.statement(C.fn_return(1))))
     .else_if(f"{arg} < 0", C.sequence(C.statement(C.fn_return(-1))))
     .else_branch(C.sequence(C.statement(C.fn_return(0))))
