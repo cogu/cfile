@@ -1,6 +1,6 @@
 [project]
 name = "cfile"
-version = "0.5.0a8"
+dynamic = ["version"]
 description = "A C code generator written in Python 3"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -11,6 +11,9 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.dynamic]
+version = {attr = "cfile.__version__"}
 
 [project.urls]
 Homepage = "https://github.com/cogu/cfile"

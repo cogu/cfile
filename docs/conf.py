@@ -8,14 +8,15 @@ import sys
 from typing import Any, Dict
 
 # Add source directory to sys.path
-sys.path.insert(0, os.path.abspath('../src'))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
+import cfile  # noqa: E402
 
 # -- Project information -----------------------------------------------------
 
 project = 'cfile'
 copyright = '2026, Conny Gustafsson'
 author = 'Conny Gustafsson'
-release = 'v0.5.0'
+release = f'v{cfile.__version__}'
 
 # -- General configuration ---------------------------------------------------
 

@@ -35,6 +35,7 @@ Notable changes.
   * `C.multi_statement(*expressions)` for comma-separated expressions in standalone statements and `for`-loop headers
 * Support `Element` initializers (such as `FunctionCall`) in variable `Declaration`
 * `__str__` helper on `Variable`, `StructMember`, `Function`, `TypeDef`, `NamedLabel`, and `EnumMember` returning the identifier name
+* Package version attribute `cfile.__version__`
 * Style options:
   * `BraceWrapping.after_control_statement`
   * `StyleOptions.indent_case_labels`

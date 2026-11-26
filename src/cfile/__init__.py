@@ -6,7 +6,10 @@ from cfile.factory import CFactory
 from cfile.writer import Writer
 from cfile.style import StyleOptions, BreakBeforeBraces, Alignment, PPDirectiveIndent
 
-__all__ = ["CFactory",
+__version__ = "0.5.0a9"
+
+__all__ = ["__version__",
+           "CFactory",
            "Writer",
            "StyleOptions",
            "BreakBeforeBraces",
