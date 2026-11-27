@@ -52,5 +52,5 @@ See [CHANGELOG.md](CHANGELOG.md).
 ## Versions
 
 * **v0.2:** No longer maintained.
-* **v0.4:** Stable release (bug-fixes only).
-* **v0.5:** Active development track.
+* **v0.4:** Legacy release (bug-fixes only).
+* **v0.5:** Current stable release.

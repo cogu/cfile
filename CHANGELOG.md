@@ -4,6 +4,8 @@ Notable changes.
 
 ## [Unreleased]
 
+## [v0.5.0] - 2026-11-27
+
 ### Added
 
 * `IfStatement` (`C.if_statement`)
