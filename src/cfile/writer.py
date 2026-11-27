@@ -246,6 +246,8 @@ class Writer(Formatter):
             elif isinstance(elem, core.BlockComment):
                 self._start_line_for_element(elem)
                 self._write_block_comment(elem)
+                if elem.width == 0:
+                    self._eol()
             elif isinstance(elem, (core.SwitchLabel, core.SwitchDefault)):
                 next_is_block = (i + 1 < num_elements) and isinstance(sequence.elements[i + 1], core.Sequence)
                 self._write_case_element_in_sequence(elem, next_is_block)
